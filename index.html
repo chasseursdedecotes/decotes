@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Décotes</title>
+<style>
+  :root{
+    --bg:#fff; --surface:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#a1a1a6;
+    --line:rgba(0,0,0,.09); --line2:rgba(0,0,0,.05);
+    --accent:#0066cc; --accent-soft:#eff6ff;
+    --up:#1a7f37; --up-soft:#e9f6ed; --down:#c9372c; --down-soft:#fdeceb;
+    --warn:#9a6700; --warn-soft:#fff8e6;
+    --r:14px; --shadow:0 1px 2px rgba(0,0,0,.04),0 10px 30px rgba(0,0,0,.07);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Helvetica Neue",sans-serif;
+    font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
+  #app{max-width:1120px;margin:0 auto;padding:0 24px 100px}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,textarea{font:inherit;color:inherit}
+  a{color:var(--accent);text-decoration:none}
+  ::selection{background:var(--accent);color:#fff}
+
+  .top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.84);
+    backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid var(--line2)}
+  .topin{display:flex;align-items:center;justify-content:space-between;height:52px;
+    max-width:1120px;margin:0 auto;padding:0 24px;gap:14px}
+  .brand{font-size:17px;font-weight:600;letter-spacing:-.02em}
+  .tabs{display:flex;gap:2px}
+  .tab{padding:6px 12px;border-radius:999px;font-size:13px;color:var(--ink2)}
+  .tab:hover{background:var(--surface)}
+  .tab.on{background:var(--ink);color:#fff}
+  .cta{background:var(--accent);color:#fff;padding:7px 15px;border-radius:999px;font-size:13px;font-weight:500}
+  .cta:hover{opacity:.88}
+  .cta:disabled{opacity:.4;cursor:default}
+  .cta.ghost{background:var(--surface);color:var(--ink)}
+  .lnk{font-size:12.5px;color:var(--accent);white-space:nowrap}
+
+  .hero{padding:46px 0 32px;border-bottom:1px solid var(--line2)}
+  .hero h1{font-size:34px;font-weight:600;letter-spacing:-.03em;line-height:1.14}
+  .hero p{color:var(--ink2);margin-top:7px}
+  .attest{display:inline-flex;align-items:center;gap:7px;margin-top:18px;background:var(--surface);
+    border-radius:999px;padding:5px 13px;font-size:12.5px;color:var(--ink2)}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--up);flex-shrink:0}
+  .dot.off{background:var(--ink3)}
+
+  .sec{padding:30px 0}
+  .sechead{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+  .sechead h2{font-size:21px;font-weight:600;letter-spacing:-.02em}
+  .lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+  /* ═══════════════════════════════════════════════════════════════════════
+     LE REGISTRE — l'objet central de l'app.
+     Les barres de potentiel s'alignent sur une colonne unique : la décote de
+     54 titres se compare d'un seul regard. Une grille de cartes ne permet pas ça.
+     ═══════════════════════════════════════════════════════════════════════ */
+  .ledger{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg)}
+  .lrow{display:grid;grid-template-columns:34px 1fr 116px 62px 200px 62px;align-items:center;
+    gap:14px;padding:0 16px;height:58px;border-top:1px solid var(--line2);cursor:pointer;
+    transition:background .12s}
+  .lrow:first-child{border-top:0}
+  .lrow:not(.lhead):hover{background:#fbfbfd}
+  .lrow.armed{background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn)}
+  .lrow.armed:hover{background:#fdf3dc}
+  .lrow.stale{box-shadow:inset 3px 0 0 var(--accent)}
+
+  .lhead{height:38px;background:#fafafa;cursor:default;border-top:0}
+  .lhead div{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+  .lhead:hover{background:#fafafa}
+
+  .lr{font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums;text-align:right}
+  .lnom{display:flex;align-items:center;gap:11px;min-width:0}
+  .lnom b{display:block;font-size:14.5px;font-weight:590;letter-spacing:-.012em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lnom span{display:block;font-size:11.5px;color:var(--ink3);font-variant-numeric:tabular-nums}
+  /* Le point plein = position détenue. Un mot de moins, une information de plus. */
+  .hold{width:6px;height:6px;border-radius:50%;background:var(--up);flex-shrink:0}
+  .hold.off{background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+  .lverd .pill{margin-top:0}
+  .lnote{text-align:right;font-variant-numeric:tabular-nums}
+  .lnote b{font-size:19px;font-weight:600;letter-spacing:-.03em}
+  .lnote s{font-size:11px;color:var(--ink3);text-decoration:none}
+  .lnote em{color:var(--ink3);font-style:normal}
+  .lpot{display:flex;align-items:center;gap:11px}
+  .lbar{flex:1;height:5px;background:var(--surface);border-radius:99px;overflow:hidden}
+  .lbar-f{height:5px;border-radius:99px;background:linear-gradient(90deg,#b9dcc6,var(--up))}
+  .lpot b{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
+  .lpot b.up{color:var(--up)} .lpot b.dn{color:var(--down)}
+  .lpot .nc{font-size:11.5px;color:var(--ink3)}
+  .lsig{text-align:right}
+  .badge{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.05em;padding:3px 7px;
+    border-radius:5px;background:var(--surface);color:var(--ink2)}
+  .badge.w{background:var(--warn);color:#fff}
+  .badge.a{background:var(--accent-soft);color:var(--accent)}
+
+  @media(max-width:860px){
+    .lrow{grid-template-columns:1fr 76px 120px;height:auto;padding:14px 16px;gap:10px}
+    .lr,.lverd,.lsig{display:none}
+    .lhead{display:none}
+  }
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:12px}
+
+  .card{border:1px solid var(--line);border-radius:var(--r);padding:16px;cursor:pointer;
+    transition:box-shadow .18s,transform .18s}
+  .card:hover{box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 26px rgba(0,0,0,.07);
+    transform:translateY(-2px);border-color:rgba(0,0,0,.14)}
+  .card.armed{border-color:var(--warn);background:var(--warn-soft)}
+  .card.stale{border-color:var(--accent)}
+  .chead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .cname{font-size:15px;font-weight:590;letter-spacing:-.01em}
+  .ctick{font-size:12px;color:var(--ink3)}
+  .note{font-size:26px;font-weight:600;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .note s{font-size:12px;color:var(--ink3);font-weight:400;text-decoration:none}
+  .pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;margin-top:9px}
+  .p-buy{background:var(--up-soft);color:var(--up)}
+  .p-watch{background:var(--surface);color:var(--ink2)}
+  .p-avoid{background:var(--down-soft);color:var(--down)}
+  .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+  .tag{font-size:11px;background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:999px}
+  .tag.w{background:var(--warn-soft);color:var(--warn)}
+  .tag.h{background:var(--surface);color:var(--ink2)}
+  .held{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--up);background:var(--up-soft);
+    padding:2px 7px;border-radius:999px}
+
+  .panel{border:1px solid var(--line);border-radius:18px;padding:32px 34px;
+    box-shadow:0 1px 2px rgba(0,0,0,.03),0 12px 40px rgba(0,0,0,.05)}
+  .back{font-size:13px;color:var(--ink2);margin-bottom:16px;display:inline-block}
+  h3.blk{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);
+    margin:38px 0 12px;padding-top:20px;border-top:1px solid var(--line2)}
+  h3.blk:first-of-type{border-top:0;padding-top:0}
+  /* Le heros : une phrase, pas un mur. Il porte la these, il doit se lire d'un coup. */
+  .heros{font-size:19px;font-weight:500;letter-spacing:-.015em;line-height:1.5;padding:24px 0 22px;
+    border-bottom:1px solid var(--line2);color:var(--ink);max-width:68ch}
+  /* Titre de section : ce que l'analyste a voulu dire. */
+  .stitre{font-size:19px;font-weight:600;letter-spacing:-.02em;line-height:1.35;margin:0 0 10px;max-width:60ch}
+  /* Chapo : le resume de la section, en gris, plus grand que le corps. */
+  .chapo{font-size:15.5px;line-height:1.6;color:var(--ink2);margin:0 0 18px;max-width:68ch}
+  /* Corps : mesure de lecture stricte. Au-dela de ~70 caracteres, l'oeil decroche. */
+  .para{font-size:15px;line-height:1.68;margin:0 0 15px;max-width:68ch;color:var(--ink)}
+  .para:last-child{margin-bottom:0}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px;background:var(--line);
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:16px 0}
+  .kpi{background:var(--bg);padding:13px 14px}
+  .kpi .k{font-size:11px;color:var(--ink3);margin-bottom:3px}
+  .kpi .v{font-size:15px;font-weight:600;letter-spacing:-.02em;word-break:break-word}
+  .kpi .v.na{color:var(--ink3);font-weight:400;font-size:13px}
+  ul.clean{list-style:none}
+  ul.clean li{padding:7px 0;border-bottom:1px solid var(--line2);font-size:14px}
+  ul.clean li:last-child{border:0}
+  li.miss{color:var(--down)}
+  b.up{color:var(--up)} b.dn{color:var(--down)}
+  .prose{font-size:15px;line-height:1.62}
+  .prose.rupt{color:var(--down)}
+  /* L'avocat du diable est une objection, pas un commentaire. Il doit trancher. */
+  .devil{border-left:3px solid var(--down);background:var(--down-soft);border-radius:0 10px 10px 0;
+    padding:16px 20px;font-size:15px;line-height:1.62;color:#8a2118;max-width:70ch;margin:0}
+  .three{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:24px}
+  .verdictbox{display:flex;gap:24px;align-items:center;background:var(--surface);border-radius:var(--r);
+    padding:20px 22px;flex-wrap:wrap}
+
+  .fil{display:flex;gap:14px;padding:13px 0;border-bottom:1px solid var(--line2);align-items:flex-start}
+  .fil .d{font-size:12px;color:var(--ink3);width:82px;flex-shrink:0;padding-top:2px}
+  .fil .b{flex:1;min-width:0}
+  .fil .t{font-size:14px;font-weight:520}
+  .fil .m{font-size:12.5px;color:var(--ink2);margin-top:2px;word-break:break-word}
+  .fil.cold .t{font-weight:400;color:var(--ink2)}
+
+  .in{border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px;width:100%;background:var(--bg)}
+  .in:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .chips{display:flex;gap:5px;flex-wrap:wrap}
+  .chip{padding:6px 12px;border-radius:999px;font-size:12.5px;background:var(--surface);color:var(--ink2)}
+  .chip.on{background:var(--ink);color:#fff}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:6px}
+  .hint{font-size:12.5px;color:var(--ink3);line-height:1.55;margin-top:8px}
+  code{background:var(--surface);padding:1px 5px;border-radius:4px;font-size:12.5px}
+
+  .notice{border-radius:var(--r);padding:15px 17px;font-size:14px;line-height:1.55;margin-bottom:16px}
+  .notice.info{background:var(--accent-soft);color:#0a4a91}
+  .notice.warn{background:var(--warn-soft);color:#7a5200}
+  .notice.err{background:var(--down-soft);color:#a3271d}
+  .empty{text-align:center;padding:60px 20px;color:var(--ink3)}
+  .empty p{margin-bottom:16px}
+
+  .drop{border:2px dashed var(--line);border-radius:18px;padding:44px 24px;text-align:center;cursor:pointer;
+    transition:border-color .15s,background .15s}
+  .drop.over{border-color:var(--accent);background:var(--accent-soft)}
+  .drop h3{font-size:17px;font-weight:600;margin-bottom:6px}
+  .drop p{color:var(--ink2);font-size:14px}
+
+  .cal{display:flex;gap:14px;padding:15px 0;border-bottom:1px solid var(--line2);align-items:center}
+  .jm{font-size:13px;font-weight:700;width:66px;flex-shrink:0}
+  .jm.soon{color:var(--down)}
+  .jm.past{color:var(--ink3)}
+
+  /* --- Échelle de valeur : la signature. Une seule audace, tout le reste est calme. --- */
+  /* Fiche en deux colonnes : le verdict reste sous les yeux pendant la lecture.
+     Fini l'espace mort a droite et le scroll aveugle. */
+  /* Jauge de potentiel sur la carte : la décote se voit, elle ne se lit plus. */
+  .gauge{margin-top:12px}
+  .gauge-t{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+  .gauge-t span{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3)}
+  .gauge-t b{font-size:13px;font-weight:600;color:var(--up);font-variant-numeric:tabular-nums}
+  .gauge-b{height:4px;background:var(--surface);border-radius:99px;overflow:hidden}
+  .gauge-f{height:4px;border-radius:99px;background:linear-gradient(90deg,#a8d5b8,var(--up))}
+  .fiche{display:grid;grid-template-columns:236px 1fr;gap:28px;align-items:start}
+  .rail-in{position:sticky;top:76px}
+  .rnom{font-size:21px;font-weight:600;letter-spacing:-.025em;line-height:1.25;margin-bottom:5px}
+  .rnote{display:flex;flex-direction:column;gap:8px;align-items:flex-start;margin:20px 0 0}
+  .rnote .pill{margin-top:0}
+  .rpot{display:flex;justify-content:space-between;align-items:baseline;margin-top:18px;
+    padding-top:16px;border-top:1px solid var(--line2)}
+  .rpot span{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3)}
+  .rpot b{font-size:19px;font-weight:600;color:var(--up);letter-spacing:-.02em}
+  .rtrig{margin-top:18px;padding:12px 13px;border-radius:10px;background:var(--surface);
+    font-size:12.5px;line-height:1.5;color:var(--ink2)}
+  .rtrig.on{background:var(--warn-soft);color:#7a5200}
+  .rtrig span{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink3);margin-bottom:5px;font-weight:600}
+  .rtrig.on span{color:var(--warn)}
+  .rnav{margin-top:22px;padding-top:18px;border-top:1px solid var(--line2);display:flex;flex-direction:column;gap:1px}
+  .rnav a{display:flex;align-items:center;gap:10px;padding:7px 9px;margin:0 -9px;border-radius:7px;
+    font-size:13px;color:var(--ink2);transition:background .12s,color .12s}
+  .rnav a:hover{background:var(--surface);color:var(--ink)}
+  .rnav a i{font-style:normal;font-size:10.5px;color:var(--ink3);font-variant-numeric:tabular-nums;
+    min-width:16px}
+  html{scroll-behavior:smooth}
+  h3.blk{scroll-margin-top:76px}
+  @media(max-width:900px){.fiche{grid-template-columns:1fr}.rail-in{position:static}}
+  .scale{border:1px solid var(--line);border-radius:14px;padding:20px 22px 18px;margin:22px 0 10px;
+    background:linear-gradient(180deg,#fcfcfd,#fff)}
+  .scale-top{display:flex;justify-content:space-between;gap:20px;margin-bottom:20px}
+  .scale-k{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px}
+  .scale-v{font-size:24px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .scale-v.up{color:var(--up)}
+  .scale-v.prot{color:var(--ink2)}
+  .bar{position:relative;height:6px;background:var(--surface);border-radius:99px;margin:0 0 22px}
+  .bar-up{position:absolute;top:0;height:6px;background:linear-gradient(90deg,rgba(0,102,204,.18),rgba(0,102,204,.42));
+    border-radius:99px}
+  .tick{position:absolute;top:-4px;width:2px;height:14px;border-radius:2px;transform:translateX(-1px)}
+  .now{position:absolute;top:-6px;width:12px;height:18px;border-radius:3px;background:var(--ink);
+    transform:translateX(-6px);box-shadow:0 0 0 3px #fff}
+  .legs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 18px}
+  .leg{display:flex;align-items:baseline;gap:8px;font-size:13px}
+  .leg i{width:7px;height:7px;border-radius:2px;flex-shrink:0;transform:translateY(-1px)}
+  .leg b{font-weight:600;color:var(--ink)}
+  .leg span{color:var(--ink2);margin-left:auto;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .leg em{font-style:normal;color:var(--ink3);margin-left:5px}
+  /* Bandeau : hauteur EGALE, jamais de débordement. Une cellule qui grandit
+     casse la grille et fait tout paraître amateur. */
+  .synth{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:1px;
+    background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:20px 0 10px}
+  .sy{background:var(--bg);padding:13px 14px;min-height:66px;display:flex;flex-direction:column;
+    justify-content:center}
+  .sy.hero{background:#fbfbfd}
+  .sy .k{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sy .v{font-size:15.5px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sy .v.na{color:var(--ink3);font-weight:400;font-size:13px}
+  .dart{border:1px solid var(--line);border-radius:12px;padding:0 16px;margin:0 0 6px}
+  .dart summary{cursor:pointer;padding:13px 0;font-size:12.5px;color:var(--ink2);list-style:none;font-weight:500}
+  .dart summary::-webkit-details-marker{display:none}
+  .dart summary::before{content:"›";display:inline-block;margin-right:8px;color:var(--ink3);transition:transform .15s}
+  .dart[open] summary::before{transform:rotate(90deg)}
+  .dart[open]{padding-bottom:16px}
+  /* Scenarios de TRI : des colonnes egales, sans colonne vide. */
+  .tri{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;
+    background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:6px}
+  .tri-c{background:var(--bg);padding:15px 16px}
+  .tri-k{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);
+    margin-bottom:8px;font-weight:600}
+  .tri-p{font-size:13.5px;line-height:1.6;color:var(--ink);margin:0}
+  .ech{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);
+    border-radius:10px;overflow:hidden;margin-bottom:18px;max-width:70ch}
+  .ech-l{display:flex;justify-content:space-between;gap:16px;background:var(--bg);padding:11px 14px;font-size:13.5px}
+  .ech-l b{font-weight:600;white-space:nowrap;color:var(--ink)}
+  .ech-l span{color:var(--ink2);text-align:right}
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     FICHE — sobriété.
+
+     Principes :
+       · Une seule couleur d'accent : le vert du potentiel. Rien d'autre ne crie.
+       · Pas de boîte quand un filet suffit. Pas de filet quand l'espace suffit.
+       · La hiérarchie se fait par la TAILLE et le GRIS, pas par des fonds.
+       · Les chiffres sont tabulaires, alignés, calmes.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  .fiche{display:grid;grid-template-columns:212px 1fr;gap:0;align-items:start}
+  @media(max-width:900px){.fiche{grid-template-columns:1fr}.rail{display:none}}
+
+  /* ── RAIL ── */
+  .rail{background:#0a0a0a;min-height:100vh}
+  .rail-in{position:sticky;top:0;padding:44px 26px 40px}
+
+  .rnom{font-size:15px;font-weight:600;letter-spacing:-.015em;line-height:1.35;
+    color:#f5f5f7;margin-bottom:3px}
+  .rtick{font-size:11px;color:#48484a;letter-spacing:.03em;margin-bottom:44px;
+    font-variant-numeric:tabular-nums}
+
+  /* Le potentiel domine. Seul élément coloré de tout l'écran. */
+  .rpot-big{margin-bottom:40px}
+  .rpot-big .lab{font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    color:#48484a;margin-bottom:10px}
+  .rpot-big .val{font-size:44px;font-weight:600;letter-spacing:-.045em;
+    line-height:.95;color:#30d158;font-variant-numeric:tabular-nums}
+  .rpot-big .src{font-size:10.5px;color:#48484a;margin-top:8px;letter-spacing:.01em}
+
+  /* Note : grande, blanche. Le verdict n'est qu'un mot, en dessous, en gris. */
+  .rnote2{margin-bottom:40px}
+  .rnote2 .n{font-size:34px;font-weight:600;letter-spacing:-.045em;line-height:1;
+    color:#f5f5f7;font-variant-numeric:tabular-nums}
+  .rnote2 .n s{font-size:13px;color:#3a3a3c;text-decoration:none;font-weight:400}
+  .nverd{font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:#636366;margin-top:8px}
+
+  .rtrig2{font-size:12px;color:#8e8e93;line-height:1.55;margin-bottom:36px;
+    padding-left:12px;border-left:1px solid #2c2c2e}
+  .rtrig2.armed{border-left-color:#ff9f0a;color:#c9a227}
+  .rtrig2 .tlab{font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    color:#48484a;margin-bottom:6px}
+
+  .rnav2{display:flex;flex-direction:column;gap:0}
+  .rnav2 a{display:flex;align-items:center;gap:12px;padding:8px 0;
+    font-size:12.5px;color:#48484a;transition:color .14s}
+  .rnav2 a:hover{color:#f5f5f7}
+  .rnav2 a i{font-style:normal;font-size:10px;color:#2c2c2e;min-width:16px;
+    font-variant-numeric:tabular-nums}
+
+  .rdate{margin-top:40px;font-size:10.5px;color:#3a3a3c}
+
+  /* ── CORPS ── */
+  .fiche-body{background:#fff;padding:64px 60px 120px;min-width:0;max-width:820px}
+
+  /* Héros : une phrase, pas un titre. Gris, calme. */
+  .fheros{font-size:17px;font-weight:400;line-height:1.65;letter-spacing:-.005em;
+    color:#3a3a3c;max-width:64ch;margin:0 0 52px}
+
+  /* Chiffres : alignés, sans boîte. Filets fins seulement. */
+  .fsynth{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));
+    gap:0;border-top:1px solid #f2f2f7;border-bottom:1px solid #f2f2f7;margin-bottom:52px}
+  .fsy{padding:16px 20px 16px 0}
+  .fsy .k{font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+    color:#aeaeb2;margin-bottom:7px;white-space:nowrap}
+  .fsy .v{font-size:15px;font-weight:500;letter-spacing:-.015em;
+    font-variant-numeric:tabular-nums;color:#1d1d1f;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fsy .v.na{color:#d1d1d6;font-weight:400}
+
+  /* Échelle de valeur : aucune boîte. Juste la barre et les repères. */
+  .fscale{margin-bottom:52px}
+  .fscale-top{display:flex;justify-content:space-between;align-items:flex-end;
+    margin-bottom:28px}
+  .fscale-bloc .k{font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+    color:#aeaeb2;margin-bottom:8px}
+  .fscale-bloc .v{font-size:32px;font-weight:600;letter-spacing:-.045em;
+    font-variant-numeric:tabular-nums;color:#1d1d1f;line-height:1}
+  .fscale-bloc .v.up{color:#30d158}
+  .fscale-bloc.right{text-align:right}
+  .fscale-bloc.right .v{color:#8e8e93;font-size:24px}
+
+  .fbar{position:relative;height:2px;background:#f2f2f7;margin:0 0 24px}
+  .fbar-pot{position:absolute;top:0;height:2px;background:#30d158}
+  .ftick{position:absolute;top:-4px;width:1px;height:10px;background:#d1d1d6}
+  .fnow{position:absolute;top:-5px;width:2px;height:12px;background:#1d1d1f}
+
+  .flegs{display:flex;flex-wrap:wrap;gap:6px 28px}
+  .fleg{display:flex;align-items:baseline;gap:8px;font-size:12px;color:#aeaeb2;
+    font-variant-numeric:tabular-nums}
+  .fleg b{color:#1d1d1f;font-weight:500;font-size:12.5px}
+  .fleg em{font-style:normal;color:#8e8e93}
+
+  /* Sections : un label, une ligne, du blanc. */
+  .fsec{margin-top:60px}
+  .fsec-h{font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    color:#c7c7cc;margin-bottom:20px}
+  .fsec-titre{font-size:19px;font-weight:600;letter-spacing:-.025em;
+    color:#1d1d1f;margin-bottom:12px;max-width:56ch;line-height:1.35}
+  .fsec-chapo{font-size:15px;color:#6e6e73;line-height:1.65;
+    margin:0 0 24px;max-width:62ch}
+  .fpara{font-size:14.5px;line-height:1.78;color:#1d1d1f;
+    max-width:66ch;margin:0 0 18px}
+  .fpara:last-child{margin-bottom:0}
+
+  /* Bilan DART : un lien, pas un panneau. */
+  .fdart{margin-bottom:52px}
+  .fdart summary{cursor:pointer;font-size:12.5px;color:#aeaeb2;list-style:none;
+    padding:0;transition:color .14s}
+  .fdart summary:hover{color:#1d1d1f}
+  .fdart summary::-webkit-details-marker{display:none}
+  .fdart[open] summary{color:#1d1d1f;margin-bottom:20px}
+
+  /* Échelle en tableau : filets, pas de bordure englobante. */
+  .fech{max-width:52ch}
+  .fech-l{display:flex;justify-content:space-between;gap:20px;
+    padding:12px 0;font-size:13.5px;border-bottom:1px solid #f2f2f7}
+  .fech-l:first-child{border-top:1px solid #f2f2f7}
+  .fech-l b{font-weight:500;color:#1d1d1f}
+  .fech-l span{color:#8e8e93;text-align:right;font-variant-numeric:tabular-nums}
+
+  /* TRI : colonnes séparées par du blanc, pas par des fonds. */
+  .ftri{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+    gap:32px;margin-top:28px}
+  .ftri-k{font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    color:#c7c7cc;margin-bottom:10px}
+  .ftri-p{font-size:13px;line-height:1.7;color:#3a3a3c;margin:0}
+
+  /* Objection : un filet, pas un fond rose. */
+  .fdevil{border-left:2px solid #ff3b30;padding-left:22px;max-width:64ch}
+  .fdevil-t{font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    color:#ff3b30;margin-bottom:12px}
+  .fdevil p{font-size:14.5px;line-height:1.75;color:#3a3a3c;margin:0}
+
+  /* Verdict : la note, la raison. Rien d'autre. */
+  .fverdict{display:grid;grid-template-columns:auto 1fr;gap:36px;align-items:start}
+  .fverdict-note .n{font-size:52px;font-weight:600;letter-spacing:-.05em;
+    color:#1d1d1f;font-variant-numeric:tabular-nums;line-height:1}
+  .fverdict-note .n s{font-size:17px;color:#d1d1d6;text-decoration:none;font-weight:400}
+  .fverdict-raison{font-size:15px;line-height:1.7;color:#3a3a3c;padding-top:6px}
+  .fverdict-raison b{display:block;font-size:15px;font-weight:500;
+    color:#1d1d1f;margin-bottom:10px}
+
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:#fff;
+    border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:5px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  @media(max-width:640px){#app{padding:0 16px 80px}.topin{padding:0 16px}
+    .hero h1{font-size:27px}.tabs{overflow-x:auto}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   DÉCOTES — poste de commandement.
+   JavaScript natif. Aucune dépendance, aucun CDN, aucune compilation.
+   Si ça s'affiche, ça marchera toujours.
+
+   CE QU'ELLE FAIT : veille DART attestante, registre des mémos classés par
+   note, triggers armés, file de réanalyse, calendrier légal, bilan primaire.
+
+   CE QU'ELLE NE FAIT PAS : analyser. L'analyse se fait avec le skill Graham x
+   Daubasses, en session, là où la recherche et la contradiction existent.
+   L'app dit QUOI analyser, et se souvient. Elle ne juge pas.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function(){
+"use strict";
+
+/* ---------- utilitaires ---------- */
+function esc(s){
+  if(s===null||s===undefined) return "";
+  return String(s).replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function get(k,d){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+function set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function jours(d){ return Math.ceil((new Date(d)-new Date())/864e5); }
+function fr(d){ try{ return new Date(d).toLocaleDateString("fr-FR"); }catch(e){ return ""; } }
+function eok(v){ return v!==null && v!==undefined && v!==""; }
+
+/* Sert à SURLIGNER, jamais à filtrer. Filtrer par mots-clés est la faute qui a
+   fait rater le franchissement VIP du 06/07/2026. Tous les dépôts sont montrés. */
+var CHAUD={"소각":"Annulation d'actions","자기주식":"Autocontrôle","대량보유":"Franchissement 5%",
+ "공개매수":"OPA / TOB","기업가치":"Value-Up","배당":"Dividende","주요사항":"Fait majeur",
+ "유상증자":"Dilution","전환사채":"Dilution (OC)","최대주주":"Changement de contrôle",
+ "주주제안":"Proposition d'actionnaire","손익구조":"Variation de résultat","합병":"Fusion",
+ "분할":"Scission","임원":"Initiés","주주총회":"Assemblée générale"};
+var FONDS=["브이아이피","VIP","얼라인","Align","플래시라이트","밸류파트너스","화이트박스",
+ "팰리서","신영","트러스톤","케이씨지아이","KCGI","라이프자산운용","머스트"];
+function chaud(n){ for(var k in CHAUD){ if(n && n.indexOf(k)>=0) return CHAUD[k]; } return null; }
+function fondsDe(t){ if(!t) return null; for(var i=0;i<FONDS.length;i++){ if(t.indexOf(FONDS[i])>=0) return FONDS[i]; } return null; }
+
+var LOIS=[
+ {d:"2026-07-23",t:"Règle des 3 % consolidée",q:"Plafonne les voix du contrôlant pour l'élection des administrateurs membres du comité d'audit. Le levier le plus puissant contre un bloc familial.",c:"Contrôle familial verrouillé"},
+ {d:"2026-09-10",t:"Vote cumulatif, administrateur séparé",q:"Un minoritaire peut concentrer ses voix sur un siège. Rend une campagne d'AG viable sous 10 % du capital.",c:"Titres avec fonds au capital"},
+ {d:"2026-03-06",t:"Annulation obligatoire de l'autocontrôle",q:"3e révision du Code de commerce. L'autocontrôle acquis doit être annulé, en principe sous un an. Stock antérieur vers 09/2027.",c:"Fort autocontrôle"},
+ {d:"2026-05-01",t:"Japon : refonte de la règle des 5 %",q:"Les dérivés cash-settled comptent désormais. Détection des fonds plus fine.",c:"Watchlist japonaise"}
+];
+
+var SEED_RAW=[
+ ["029530","Sindoh",1],["001560","Cheil Grinding Wheel",1],["009680","Motonic",1],
+ ["016580","Whan In Pharm",1],["415380","Studio Samick",1],["010240","Heungkuk Metaltech",1],
+ ["033270","Korea United Pharm",1],["005680","Samyoung Electronics",1],["010960","Samho Development",1],
+ ["009300","Sam-A Pharm",1],["033920","Muhak",1],["221980","KD Chem",1],["003650","Michang Oil",1],
+ ["024800","Yoosung T&S",0],["004250","National Plastic (NPC)",0],["408920","Messe eSang",0],
+ ["241710","Cosmecca Korea",0],["005710","Daewon Sanup",0],["143240","Saramin",0],
+ ["210540","DY Power",0],["002170","SYTS Corp",0],["066620","Kukbo Design",0],
+ ["263020","DK&D",0],["080010","eSang Networks",0],["004150","Hansol Holdings",0],
+ ["023910","Daehan Pharmaceutical",0],["015230","Daechang Forging",0],["069730","DSR Wire",0],
+ ["000590","CS Holdings",0],["014440","Youngbo Chemical",0],["053620","Taeyang",0],
+ ["037350","Sungdo E&C",0],["192440","Spigen Korea",0],["035890","Seohee Construction",0],
+ ["006660","Samsung Climate Control",0],["017480","Samhyun Steel",0],["000970","Korea Castiron Pipe",0],
+ ["025000","KPX Chemical",0],["032560","Hwang Kum Steel",0],["004780","Daeryuk Can",0],
+ ["084010","Daehan Steel",0],["024090","DCM Corp",0],["079960","Dongyang E&P",0],
+ ["032750","Samjin",0],["025530","SJM Holdings",0],["123700","SJM Co",0],
+ ["004890","Dongil Industries",0],["001770","Shin Hwa Dynamics",0],["021820","Sewon Precision",0],
+ ["004700","Chokwang Leather",0],["000850","Hwacheon Machine Tool",0],["079170","Hanchang Industry",0],
+ ["120240","Daejung Chemicals",0],["014830","UNID",0]
+];
+function seed(){
+  return SEED_RAW.map(function(r){
+    return {ticker:r[0],nom:r[1],detenu:!!r[2],memo:null,note:null,verdict:null,trigger:null,
+      arme:false,depots:[],bilan:null,cours:null,historique:[],importe:null,
+      place:"KRX", devise:"KRW"};   // la watchlist embarquée est coréenne
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PLACE ET DEVISE — le Japon entre dans le registre.
+
+   Un ticker coréen fait 6 chiffres (029530), un japonais 4 (7203). C'est une
+   heuristique de repli : le mémo, lui, porte la place explicitement dans
+   `societe.place`. On lit le mémo d'abord, on devine ensuite.
+
+   POURQUOI LA DEVISE COMPTE. Le POURCENTAGE de potentiel reste comparable entre
+   les deux pays (c'est un ratio). Les MONTANTS ABSOLUS ne le sont pas : afficher
+   « 3 217 億 » (억원) à côté de « 1 700 億 » (億円) sans distinguer, c'est inviter
+   l'erreur. Chaque montant porte donc son symbole.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function placeDe(m, ticker){
+  var soc = (m && m.societe) || {};
+  if(soc.place) return soc.place;
+  if(m && m.place) return m.place;
+  return String(ticker).length === 4 ? "TSE" : "KRX";
+}
+function deviseDe(m, place){
+  var soc = (m && m.societe) || {};
+  if(soc.devise) return soc.devise;
+  if(m && m.devise) return m.devise;
+  return place === "TSE" ? "JPY" : "KRW";
+}
+function symbole(devise){ return devise === "JPY" ? "¥" : "₩"; }
+function drapeau(place){ return place === "TSE" ? "🇯🇵" : "🇰🇷"; }
+function estJapon(f){ return (f.place || "KRX") === "TSE"; }
+
+/* ---------- état ---------- */
+var S = {
+  vue:"titres", sel:null, tri:"note", filtre:"",
+  fiches: get("dv:fiches", null) || seed(),
+  cfg: Object.assign({cle:"",relais:"/.netlify/functions/scan",fenetre:7}, get("dv:cfg",{})),
+  scan: Object.assign({actif:false,erreur:null,fait:null,attestes:0,total:0}, get("dv:scan",{})),
+  msg:null, err:null, over:false, colle:"", socle:{charge:false,n:0}
+};
+S.scan.actif=false;
+
+function save(){ set("dv:fiches",S.fiches); set("dv:cfg",S.cfg); }
+function fiche(t){ for(var i=0;i<S.fiches.length;i++){ if(S.fiches[i].ticker===t) return S.fiches[i]; } return null; }
+
+/* ---------- dérivés ---------- */
+function signaux(f){ return (f.depots||[]).filter(function(d){ return d.type; }); }
+function aRevoir(f){
+  var s=signaux(f);
+  if(!s.length) return false;
+  if(!f.memo) return true;
+  var dm=String(f.importe||"").replace(/-/g,"");
+  return s.some(function(d){ return String(d.date||"").replace(/-/g,"")>dm; });
+}
+function tousDepots(){
+  var l=[];
+  S.fiches.forEach(function(f){
+    (f.depots||[]).forEach(function(d){
+      var c=Object.assign({},d); c.ticker=f.ticker; c.nom=f.nom; l.push(c);
+    });
+  });
+  l.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
+  return l;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VEILLE — trois contraintes, et une leçon.
+
+   1. CORS : OpenDART ne renvoie pas les en-têtes. Un relais est obligatoire.
+   2. TIMEOUT 10 s par fonction Netlify → on envoie des LOTS.
+   3. La table DART pèse 20 Mo décompressés. La décompresser et la parser DANS la
+      fonction la faisait planter (HTTP 502) : trop de CPU, trop de mémoire, trop
+      peu de temps.
+
+   LA LEÇON : le travail lourd n'a rien à faire dans une fonction serverless. Le
+   navigateur, lui, n'a ni limite de temps ni limite de mémoire, et sait
+   décompresser nativement. La fonction relaie les octets, le navigateur fait le
+   reste, et le résultat est mis en cache. La table n'est téléchargée qu'une fois.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function lancerScan(){
+  if(S.scan.actif) return;
+  S.scan.actif = true; S.scan.erreur = null; S.scan.progres = "0/" + S.fiches.length; render();
+
+  // LE JAPON EST HORS PÉRIMÈTRE DE LA VEILLE.
+  // La table corp_code en dur ne couvre que la Corée, et les fonctions n'appellent
+  // que DART. Un titre japonais scanné produirait un faux "non résolu" qui
+  // ressemblerait à un RAS. On l'exclut EXPLICITEMENT, et on l'affiche.
+  var jp = S.fiches.filter(estJapon);
+  var tickers = S.fiches.filter(function(f){ return !estJapon(f); })
+                        .map(function(f){ return f.ticker; });
+  var end = new Date(), bgn = new Date(Date.now() - S.cfg.fenetre * 864e5);
+  function F(d){ return d.toISOString().slice(0,10).replace(/-/g, ""); }
+
+  // Les corp_codes sont EN DUR côté serveur. Aucune table à télécharger,
+  // aucun timeout possible. C'est ce téléchargement qui causait les 502/504.
+  (function(){
+    var LOT = 6, i = 0, attestes = 0, total = 0, echecs = 0;
+
+    function lot(){
+      if(i >= tickers.length){
+        S.scan = { actif:false, progres:null, fait:new Date().toISOString(),
+          attestes:attestes, total:total, hors_perimetre:jp.length,
+          erreur: echecs ? (echecs + " lot(s) en échec. Relance pour compléter.") : null };
+        set("dv:scan", S.scan); save(); S.vue = "veille"; render();
+        return;
+      }
+      var chunk = tickers.slice(i, i + LOT);
+
+      fetch(S.cfg.relais, {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ cle:S.cfg.cle, tickers:chunk, bgn:F(bgn), end:F(end) })
+      }).then(function(r){
+        if(r.status === 404) throw new Error("Relais introuvable (404).");
+        if(!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      }).then(function(d){
+        if(d.erreur) throw new Error(d.erreur);
+        attestes += (d.attestes || 0);
+        total += (d.total || chunk.length);
+        (d.resultats || []).forEach(function(res){
+          var f = fiche(res.ticker); if(!f) return;
+          var dep = [];
+          (res.filings || []).forEach(function(x){
+            dep.push({ date:x.rcept_dt, titre:x.report_nm, par:x.flr_nm, no:x.rcept_no,
+              type:chaud(x.report_nm), fonds:(fondsDe(x.flr_nm)||fondsDe(x.report_nm)), kind:"depot" });
+          });
+          (res.majorstock || []).filter(function(x){ return x.in_window; }).forEach(function(x){
+            dep.push({ date:x.rcept_dt, titre:"Franchissement 5 % ("+x.report_tp+")", par:x.repror,
+              no:x.rcept_no, type:"Franchissement 5%", fonds:fondsDe(x.repror), kind:"5pct",
+              pct:x.stkrt, delta:x.stkrt_irds, titres:x.stkqy, objet:null });
+          });
+          dep.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
+          f.depots = dep;
+        });
+        suite();
+      }).catch(function(e){
+        echecs++; total += chunk.length; suite();   // un lot qui tombe n'arrête pas le scan
+      });
+
+      function suite(){
+        i += LOT;
+        S.scan.progres = Math.min(i, tickers.length) + "/" + tickers.length;
+        render();
+        setTimeout(lot, 120);
+      }
+    }
+    lot();
+  })();
+}
+
+function tirerBilan(t){
+  var f=fiche(t); if(!f) return;
+  f.bilan={chargement:true}; render();
+  fetch(S.cfg.relais.replace("/scan","/bilan"),{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({cle:S.cfg.cle,ticker:t})
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if(d.erreur) throw new Error(d.erreur);
+    d.tire=new Date().toISOString();
+    f.bilan=d; save(); render();
+  }).catch(function(e){
+    f.bilan={erreur:String(e.message||e)}; render();
+  });
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SOCLE PARTAGÉ — pourquoi les mémos vivent dans le dépôt.
+
+   LE DÉFAUT CORRIGÉ ICI. Tout était dans le localStorage du navigateur : les 54
+   mémos, les cours, les triggers. Changer d'ordinateur, ou même de navigateur, et
+   tout avait disparu. Un outil qui pilote du capital ne peut pas être prisonnier
+   d'une machine.
+
+   LE PARTAGE. `fiches.json` est versionné dans le dépôt GitHub, à côté d'index.html.
+   L'app le charge au démarrage, sur n'importe quelle machine. C'est la SOURCE DE
+   VÉRITÉ des mémos.
+
+   CE QUI RESTE LOCAL, ET POURQUOI. Les dépôts DART rapportés par la veille, les
+   cours saisis à la main, l'état armé d'un trigger : ce sont des annotations de
+   travail, propres à une session. Elles restent dans le navigateur. Le mémo, lui,
+   est un document publié : il vient du dépôt.
+
+   LE CYCLE. Tu importes un mémo → tu cliques « Exporter pour le dépôt » →
+   tu commits fiches.json sur GitHub → toutes tes machines l'ont.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function chargerSocle(){
+  return fetch("fiches.json?t=" + Date.now())
+    .then(function(r){
+      if(!r.ok) throw new Error("pas de socle");
+      return r.json();
+    })
+    .then(function(liste){
+      if(!Array.isArray(liste) || !liste.length) return 0;
+      var n = 0;
+      liste.forEach(function(m){
+        if(!m || !m.ticker) return;
+        var t = String(m.ticker);
+        var f = fiche(t);
+        if(!f){
+          var pl = placeDe(m, t);
+          f = { ticker:t, nom:(m.nom || t), detenu:false, memo:null, note:null,
+                verdict:null, trigger:null, arme:false, depots:[], bilan:null,
+                cours:null, historique:[], importe:null, place:pl, devise:deviseDe(m, pl) };
+          S.fiches.push(f);
+        }
+        // Le mémo vient du dépôt. Les annotations locales (arme, depots, bilan) survivent.
+        f.memo = m;
+        if(m.note !== undefined && m.note !== null) f.note = m.note;
+        if(m.verdict) f.verdict = m.verdict;
+        if(m.trigger) f.trigger = m.trigger;
+        if(m.cours !== undefined && m.cours !== null && !f.cours) f.cours = m.cours;
+        if(m.vant_action !== undefined && m.vant_action !== null) f.vant_action = m.vant_action;
+        if(m.detenu !== undefined && m.detenu !== null) f.detenu = !!m.detenu;
+        f.place = placeDe(m, t);
+        f.devise = deviseDe(m, f.place);
+        f.importe = m.date || f.importe;
+        n++;
+      });
+      S.socle = { charge:true, n:n, quand:new Date().toISOString() };
+      save();
+      return n;
+    })
+    .catch(function(){
+      // Pas de fiches.json dans le dépôt : l'app fonctionne, en mode local seul.
+      S.socle = { charge:false, n:0 };
+      return 0;
+    });
+}
+
+/* ---------- IMPORT ---------- */
+function importer(txt, degrade){
+  var data;
+  try{ data=JSON.parse(txt); }
+  catch(e){ S.err="JSON invalide. Dépose le fichier .json produit par le skill à côté du mémo."; S.msg=null; render(); return; }
+  var liste=Array.isArray(data)?data:[data];
+  var ok=0, crees=[];
+  liste.forEach(function(m){
+    if(!m||!m.ticker) return;
+    var t = String(m.ticker);
+    var f = fiche(t);
+
+    // Ticker inconnu : on CRÉE la fiche au lieu de la rejeter. C'est ce qui
+    // permet d'ajouter un titre japonais sans toucher à la watchlist embarquée.
+    if(!f){
+      var pl = placeDe(m, t);
+      f = { ticker:t, nom:(m.nom || (m.societe && m.societe.nom_latin) || t),
+            detenu:false, memo:null, note:null, verdict:null, trigger:null, arme:false,
+            depots:[], bilan:null, cours:null, historique:[], importe:null,
+            place:pl, devise:deviseDe(m, pl) };
+      S.fiches.push(f);
+      crees.push(t + " " + drapeau(pl));
+    }
+    var d = m.date || new Date().toISOString().slice(0,10);
+    // On ne consigne QUE les vrais mouvements. Réimporter le même mémo ne doit pas
+    // empiler "4.5 → 4.5" cinq fois : un historique qui ne raconte rien est du bruit.
+    var change = (f.note !== null && f.note !== undefined && m.note !== f.note);
+    if(change){
+      f.historique = (f.historique||[]).concat([{date:d, de:f.note, vers:m.note,
+        verdict:m.verdict, pourquoi:m.pourquoi_note || ""}]);
+    }
+    f.memo=m;
+    if(m.note!==undefined && m.note!==null) f.note=m.note;
+    if(m.verdict) f.verdict=m.verdict;
+    if(m.trigger) f.trigger=m.trigger;
+    f.arme=!!m.arme;
+    if(m.cours!==undefined && m.cours!==null) f.cours=m.cours;
+    if(m.detenu!==undefined && m.detenu!==null) f.detenu=!!m.detenu;
+    if(m.vant_action!==undefined && m.vant_action!==null) f.vant_action=m.vant_action;
+    // place et devise : le mémo fait foi, l'existant sert de repli
+    f.place = placeDe(m, t) || f.place || "KRX";
+    f.devise = deviseDe(m, f.place) || f.devise || "KRW";
+    f.importe=d;
+    ok++;
+  });
+  save();
+  S.msg = ok ? (ok+" mémo"+(ok>1?"s":"")+" importé"+(ok>1?"s":"")+"."
+    + (crees.length ? " Nouveau"+(crees.length>1?"x":"")+" titre"+(crees.length>1?"s":"")+" : "+crees.join(", ")+"." : "")) : null;
+  S.err = null;
+  S.colle="";
+  render();
+  if(ok && !degrade) setTimeout(function(){ S.vue="titres"; S.msg=null; render(); }, 900);
+}
+
+/* Extrait une fiche d'un fichier .html. Voie sûre : la balise JSON embarquée
+   que le skill place dans le mémo. Voie de secours : lecture du balisage, en
+   PRÉVENANT que c'est deviné (fragile si le gabarit change). */
+function extraireHTML(html){
+  // Voie sure : la balise <script type=application/json id=fiche> ... fermeture, que le
+  var m = html.match(/<script[^>]*id=["']fiche["'][^>]*>([\s\S]*?)<\/script>/i);
+  if(m){
+    try{ return {data:JSON.parse(m[1].trim()), devine:false}; }
+    catch(e){ /* tombe vers la voie de secours */ }
+  }
+  // Voie de secours : deviner depuis le balisage. Signalée comme telle.
+  function pick(re){ var x = html.match(re); return x ? x[1].trim() : null; }
+  var ticker = pick(/data-ticker=["']([0-9]{6})["']/i) || pick(/\((\d{6})\)/);
+  if(!ticker) return {erreur:"HTML sans balise JSON (id=\"fiche\") et sans ticker repérable. Régénère le mémo avec le skill à jour, qui embarque le JSON."};
+  var noteTxt = pick(/data-note=["']([0-9.]+)["']/i) || pick(/([0-5](?:[.,]5)?)\s*\/\s*5/);
+  var note = noteTxt ? parseFloat(String(noteTxt).replace(",", ".")) : null;
+  var verdict = pick(/data-verdict=["'](ACHETER|SURVEILLER|EVITER)["']/i)
+    || pick(/\b(ACHETER|SURVEILLER|EVITER)\b/);
+  return {devine:true, data:{ticker:ticker, note:(isNaN(note)?null:note), verdict:verdict,
+    date:new Date().toISOString().slice(0,10)}};
+}
+
+function lireFichiers(fs){
+  Array.prototype.slice.call(fs).forEach(function(file){
+    var r=new FileReader();
+    var estHtml = /\.html?$/i.test(file.name||"") ;
+    r.onload=function(){
+      var txt=String(r.result);
+      if(estHtml || /^\s*<(!doctype|html)/i.test(txt)){
+        var res=extraireHTML(txt);
+        if(res.erreur){ S.err=res.erreur; S.msg=null; render(); return; }
+        if(res.devine) res.data.partiel=true;          // marque la fiche comme dégradée
+        importer(JSON.stringify(res.data), res.devine); // ne bascule PAS si dégradé
+        if(res.devine){
+          S.err="IMPORT DÉGRADÉ. Ce mémo ne contient pas la balise JSON : seuls le ticker, la note "
+            +"et le verdict ont pu être devinés depuis le balisage. Thèse, gouvernance, catalyseurs, "
+            +"avocat du diable : PERDUS. Régénère le mémo avec le skill à jour, ou envoie-le à Claude "
+            +"pour qu'il y injecte la balise.";
+          S.msg=null;
+          render();
+        }
+      } else {
+        importer(txt);
+      }
+    };
+    r.readAsText(file);
+  });
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   L'ÉCHELLE DE VALEUR — l'élément signature.
+
+   Le deep value tient en une phrase : quelle est la DISTANCE entre le prix et
+   la valeur, et qu'est-ce qui protège en bas. Cette distance se lisait en prose.
+   Elle se voit maintenant.
+
+   Axe : du plancher (net-net) à la valeur intrinsèque. Le cours est un repère.
+   La zone entre le cours et la cible est le potentiel. Ce qui est SOUS le cours
+   est la protection.
+
+   GARDE-FOU : si les valeurs ne sont pas cohérentes avec le cours (unité
+   douteuse, extraction ratée), on NE DESSINE PAS. Un graphique faux est pire
+   qu'une absence de graphique.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function nb(s){
+  if(s === null || s === undefined) return null;
+  if(typeof s === "number") return s;
+  var t = String(s).replace(/\u202f|\u00a0/g, " ");
+  var m = t.match(/([0-9][0-9 .]{1,})/);
+  if(!m) return null;
+  var n = parseInt(m[1].replace(/[^0-9]/g, ""), 10);
+  return isNaN(n) ? null : n;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE POTENTIEL — reference : la VALEUR INTRINSEQUE.
+
+   C'est la hausse du cours necessaire pour atteindre ce que le titre vaut
+   reellement. Pas la cible prudente du redacteur, pas un objectif d'accumulation :
+   la valeur pleine. C'est la mesure de la DECOTE.
+
+   Ordre de recherche, du plus fiable au moins fiable :
+     1. "Valeur intrinseque" de l'echelle du memo (par action, ₩)
+     2. VANT par action, a defaut
+     3. Cible du memo, en dernier recours
+   Chaque source est AFFICHEE. On ne melange pas des references sans le dire.
+   Renvoie {v: %, src: libelle, cible: valeur} ou null.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function potentiel(f){
+  var M = f.memo || {};
+  var cours = f.cours || M.cours;
+  if(!cours) return null;
+
+  var P = M.potentiel || {};
+  var e = {};
+  (P.echelle || []).forEach(function(x){
+    var i = x.indexOf(" : ");
+    if(i > 0) e[x.slice(0,i)] = x.slice(i+3);
+  });
+
+  function ok(v){ return v && v > cours * 0.2 && v < cours * 15; }
+
+  // 1. Valeur intrinseque : la vraie mesure de la decote.
+  var vi = nb(e["Valeur intrinsèque"]);
+  if(ok(vi)) return { v: Math.round((vi/cours - 1) * 100), src: "valeur intrinsèque", cible: vi };
+
+  // 2. VANT par action.
+  var vpa = f.vant_action || M.vant_action;
+  if(ok(vpa)) return { v: Math.round((vpa/cours - 1) * 100), src: "VANT", cible: vpa };
+
+  // 3. Cible du memo. Signalee comme telle.
+  var c = nb(e["Cible 2-4 ans"]);
+  if(ok(c)) return { v: Math.round((c/cours - 1) * 100), src: "cible du mémo", cible: c };
+
+  return null;
+}
+function potV(f){ var p = potentiel(f); return p ? p.v : null; }
+
+function echelleValeur(f){
+  var M = f.memo || {};
+  var P = M.potentiel || {};
+  var cours = f.cours || M.cours;
+  if(!cours || !P.echelle || !P.echelle.length) return "";
+
+  var e = {};
+  P.echelle.forEach(function(x){
+    var i = x.indexOf(" : ");
+    if(i > 0) e[x.slice(0, i)] = x.slice(i + 3);
+  });
+
+  var pts = [
+    { k: "Plancher",   v: nb(e["Plancher (net-net)"]), c: "var(--up)",     r: "net-net" },
+    { k: "Cible",      v: nb(e["Cible 2-4 ans"]),      c: "var(--accent)", r: "2 à 4 ans" },
+    { k: "Intrinsèque",v: nb(e["Valeur intrinsèque"]), c: "var(--ink)",    r: "VANT" }
+  ].filter(function(p){
+    // Cohérence : une valeur par action est du meme ordre que le cours.
+    return p.v && p.v > cours * 0.15 && p.v < cours * 12;
+  });
+  if(pts.length < 2) return "";   // rien de fiable a montrer : on s'abstient
+
+  var vals = pts.map(function(p){ return p.v; }).concat([cours]);
+  var lo = Math.min.apply(null, vals) * 0.92;
+  var hi = Math.max.apply(null, vals) * 1.06;
+  var pos = function(v){ return ((v - lo) / (hi - lo)) * 100; };
+
+  var plancher = pts.filter(function(p){ return p.k === "Plancher"; })[0];
+  var po = potentiel(f);
+  var up = po ? po.v : null;
+  var prot = plancher ? Math.round((plancher.v / cours - 1) * 100) : null;
+
+  // Si le potentiel vient de la VANT, on place ce repere sur l'axe.
+  if(po && po.src === "VANT" && po.cible){
+    pts.push({ k: "80 % VANT", v: po.cible, c: "var(--accent)", r: "objectif" });
+    var vv = pts.map(function(p){ return p.v; }).concat([cours]);
+    lo = Math.min.apply(null, vv) * 0.92;
+    hi = Math.max.apply(null, vv) * 1.06;
+    pos = function(v){ return ((v - lo) / (hi - lo)) * 100; };
+  }
+  var cible = pts.filter(function(p){ return p.k === "80 % VANT" || p.k === "Cible"; })[0];
+
+  var h = '<div class="scale">';
+  // Deux chiffres, jamais une phrase. Un libelle explique, une valeur se lit.
+  h += '<div class="scale-top">'
+     + '<div><div class="scale-k">Potentiel · ' + (po && po.src === "VANT" ? "80 % VANT" : "cible") + '</div>'
+     + '<div class="scale-v' + (up !== null && up > 0 ? ' up' : '') + '">'
+     + (up === null ? "—" : (up > 0 ? "+" : "") + up + " %") + '</div></div>'
+     + '<div style="text-align:right"><div class="scale-k">'
+     + (prot !== null && prot > 0 ? "Plancher au-dessus du cours" : "Protection sous le cours") + '</div>'
+     + '<div class="scale-v prot">'
+     + (prot === null ? "—" : (prot > 0 ? "+" + prot + " %" : prot + " %")) + '</div></div>'
+     + '</div>';
+
+  // barre : zone de potentiel (cours -> cible) surlignee
+  h += '<div class="bar">';
+  if(cible && cible.v > cours){
+    h += '<div class="bar-up" style="left:' + pos(cours) + '%;width:'
+       + Math.max(0, pos(cible.v) - pos(cours)) + '%"></div>';
+  }
+  pts.forEach(function(p){
+    h += '<div class="tick" style="left:' + pos(p.v) + '%;background:' + p.c + '"></div>';
+  });
+  h += '<div class="now" style="left:' + pos(cours) + '%"></div>';
+  h += '</div>';
+
+  // legende : chaque repere, sa valeur, son ecart au cours
+  h += '<div class="legs">';
+  h += '<div class="leg"><i style="background:var(--ink2)"></i><b>Cours</b>'
+     + '<span>' + cours.toLocaleString("fr-FR") + ' ₩</span></div>';
+  pts.forEach(function(p){
+    var d = Math.round((p.v / cours - 1) * 100);
+    h += '<div class="leg"><i style="background:' + p.c + '"></i><b>' + esc(p.k) + '</b>'
+       + '<span>' + p.v.toLocaleString("fr-FR") + ' ₩ <em>'
+       + (d > 0 ? "+" : "") + d + ' %</em></span></div>';
+  });
+  h += '</div></div>';
+  return h;
+}
+
+/* ═══════════════════════ RENDU ═══════════════════════ */
+function vNote(n,taille){
+  var t = taille || 26;
+  if(n===null||n===undefined)
+    return '<div class="note" style="font-size:'+t+'px;color:var(--ink3)">—</div>';
+  return '<div class="note" style="font-size:'+t+'px">'+esc(n)+'<s>/5</s></div>';
+}
+function vPill(v){
+  if(!v) return "";
+  var c = v==="ACHETER" ? "p-buy" : (v==="EVITER" ? "p-avoid" : "p-watch");
+  return '<span class="pill '+c+'">'+esc(v)+'</span>';
+}
+function vKpi(k,v,na){
+  var vide = !eok(v);
+  return '<div class="kpi"><div class="k">'+esc(k)+'</div><div class="v'+(vide?" na":"")+'">'
+    + (vide ? esc(na||"—") : esc(v)) + '</div></div>';
+}
+function money(v){
+  if(!eok(v)) return null;
+  if(typeof v==="number") return Math.round(v/1e8).toLocaleString("fr-FR")+" 억";
+  return v;
+}
+
+function vHeader(){
+  var chauds = tousDepots().filter(function(d){return d.type;}).length;
+  var tabs=[["titres","Titres"],["veille","Veille"+(chauds?" · "+chauds:"")],["import","Importer"],
+    ["calendrier","Calendrier"],["reglages","Réglages"]];
+  return '<div class="top"><div class="topin">'
+    + '<div class="brand">Décotes</div>'
+    + '<div class="tabs">' + tabs.map(function(t){
+        return '<button class="tab'+(S.vue===t[0]?" on":"")+'" data-vue="'+t[0]+'">'+esc(t[1])+'</button>';
+      }).join("") + '</div>'
+    + '<button class="cta" id="btn-scan"'+(S.scan.actif?" disabled":"")+'>'
+    + (S.scan.actif ? '<span class="spin"></span>'+esc(S.scan.progres||'Scan') : 'Lancer la veille') + '</button>'
+    + '</div></div>';
+}
+
+function vTitres(){
+  var armes = S.fiches.filter(function(f){return f.arme;}).length;
+  var revoir = S.fiches.filter(aRevoir);
+  var chauds = tousDepots().filter(function(d){return d.type;}).length;
+  var memos = S.fiches.filter(function(f){return f.memo;}).length;
+
+  var titre, sous;
+  if(armes>0){ titre = armes+" trigger"+(armes>1?"s armés.":" armé.");
+    sous = "Un fait daté a franchi le seuil que tu avais fixé. Reprends le mémo."; }
+  else if(revoir.length>0){ titre = revoir.length+" titre"+(revoir.length>1?"s":"")+" à réanalyser.";
+    sous = "Un dépôt DART est postérieur au dernier mémo. La note ne l'intègre pas."; }
+  else if(chauds>0){ titre = chauds+" dépôt"+(chauds>1?"s":"")+" à qualifier.";
+    sous = "Des dépôts sont tombés. Aucun n'arme de trigger."; }
+  else { titre = "Rien d'armé.";
+    sous = "Aucun trigger armé sur les 53 titres. Une semaine calme est une information."; }
+
+  var h = '<div class="hero"><h1>'+esc(titre)+'</h1><p>'+esc(sous)+'</p>'
+    + '<div class="attest"><span class="dot'+(S.scan.fait?"":" off")+'"></span>'
+    + (S.scan.fait
+        ? esc(S.scan.attestes+"/"+S.scan.total+" titres coréens attestés sur DART · "+fr(S.scan.fait)
+            + (S.scan.hors_perimetre ? " · 🇯🇵 "+S.scan.hors_perimetre+" hors périmètre" : ""))
+        : "Veille jamais lancée. Aucune couverture attestée.")
+    + esc(" · "+memos+" mémos") + '</div></div>';
+
+  if(revoir.length>0){
+    h += '<div class="sec" style="padding-bottom:0"><div class="notice info"><b>À reprendre avec le skill.</b> '
+      + esc(revoir.map(function(f){return f.nom;}).join(", "))
+      + '. Un dépôt DART est postérieur au dernier mémo : la note ne l\'intègre pas encore.</div></div>';
+  }
+
+  var tris = [["note","Note"],["pot","Potentiel"],["revoir","À réanalyser"],
+              ["arme","Triggers armés"],["detenu","Détenus"],["nom","A→Z"]];
+  h += '<div class="sec"><div class="sechead">'
+    + '<input class="in" id="filtre" style="max-width:230px" placeholder="Filtrer" value="'+esc(S.filtre)+'">'
+    + '<div class="chips">' + tris.map(function(t){
+        return '<button class="chip'+(S.tri===t[0]?" on":"")+'" data-tri="'+t[0]+'">'+esc(t[1])+'</button>';
+      }).join("") + '</div></div>';
+
+  var l = S.fiches.slice();
+  if(S.filtre.trim()){
+    var q = S.filtre.toLowerCase();
+    l = l.filter(function(f){ return f.nom.toLowerCase().indexOf(q)>=0 || f.ticker.indexOf(q)>=0; });
+  }
+  function n(x){ return (x===null||x===undefined) ? -1 : x; }
+  if(S.tri==="note")   l.sort(function(a,b){ return (n(b.note)-n(a.note)) || a.nom.localeCompare(b.nom); });
+  if(S.tri==="pot")    l.sort(function(a,b){
+    var pa=potV(a), pb=potV(b);
+    return (pb===null?-9999:pb) - (pa===null?-9999:pa) || (n(b.note)-n(a.note)); });
+  if(S.tri==="revoir") l.sort(function(a,b){ return ((aRevoir(b)?1:0)-(aRevoir(a)?1:0)) || (n(b.note)-n(a.note)); });
+  if(S.tri==="arme")   l.sort(function(a,b){ return ((b.arme?1:0)-(a.arme?1:0)) || (n(b.note)-n(a.note)); });
+  if(S.tri==="detenu") l.sort(function(a,b){ return ((b.detenu?1:0)-(a.detenu?1:0)) || (n(b.note)-n(a.note)); });
+  if(S.tri==="nom")    l.sort(function(a,b){ return a.nom.localeCompare(b.nom); });
+
+  /* ═════════════════════════════════════════════════════════════════════════
+     LE REGISTRE.
+
+     Des cartes ne se comparent pas : chacune vit dans sa boîte. Un registre,
+     si. Les barres de potentiel s'alignent sur une même colonne et forment la
+     silhouette de la décote sur toute la watchlist. C'est ÇA, l'arbitrage du
+     capital : voir d'un coup d'oeil où le prochain euro doit aller.
+     ═════════════════════════════════════════════════════════════════════════ */
+  var maxPot = 0;
+  l.forEach(function(f){ var p = potV(f); if(p !== null && p > maxPot) maxPot = p; });
+
+  h += '<div class="ledger">'
+    + '<div class="lrow lhead">'
+    + '<div class="lr"></div><div class="lnom">Titre</div><div class="lverd">Verdict</div>'
+    + '<div class="lnote">Note</div><div class="lpot">Potentiel</div><div class="lsig"></div>'
+    + '</div>';
+
+  h += l.map(function(f, idx){
+    var po = potentiel(f);
+    var pot = po ? po.v : null;
+    var sig = signaux(f);
+    var cls = f.arme ? " armed" : (aRevoir(f) ? " stale" : "");
+    var w = (pot !== null && maxPot > 0) ? Math.max(2, Math.min(100, (pot/maxPot)*100)) : 0;
+
+    var r = '<div class="lrow'+cls+'" data-open="'+f.ticker+'">';
+    r += '<div class="lr">'+(idx+1)+'</div>';
+    r += '<div class="lnom">'
+       + (f.detenu ? '<i class="hold" title="Détenu"></i>' : '<i class="hold off"></i>')
+       + '<div><b>'+esc(f.nom)+'</b>'
+       + '<span>'+drapeau(f.place)+' '+esc(f.ticker)+'</span></div></div>';
+    r += '<div class="lverd">' + (f.verdict ? vPill(f.verdict)
+       : '<span class="pill p-watch">Pas de mémo</span>') + '</div>';
+    r += '<div class="lnote">' + (f.note===null||f.note===undefined ? '<em>—</em>'
+       : '<b>'+esc(f.note)+'</b><s>/5</s>') + '</div>';
+
+    // La barre : alignee sur toutes les lignes, donc comparable a vue.
+    if(pot !== null){
+      r += '<div class="lpot"><div class="lbar"><div class="lbar-f" style="width:'+w+'%"></div></div>'
+         + '<b class="'+(pot>0?"up":"dn")+'">'+(pot>0?"+":"")+pot+' %</b></div>';
+    } else {
+      r += '<div class="lpot"><span class="nc">non calculable</span></div>';
+    }
+
+    r += '<div class="lsig">';
+    if(f.arme) r += '<span class="badge w">ARMÉ</span>';
+    else if(aRevoir(f)) r += '<span class="badge a">À REVOIR</span>';
+    else if(sig.length) r += '<span class="badge">'+sig.length+'</span>';
+    r += '</div></div>';
+    return r;
+  }).join("");
+
+  h += '</div></div>';
+  return h;
+}
+
+function vDepot(d, ticker, i){
+  var h = '<div class="fil'+(d.type?"":" cold")+'">'
+    + '<div class="d">'+esc(d.date)+'</div><div class="b">'
+    + '<div class="t">'+esc(d.type||"Dépôt")
+    + (d.fonds ? '<span class="tag w" style="margin-left:8px">⚑ '+esc(d.fonds)+'</span>' : '')
+    + '</div><div class="m">'+esc(d.titre)+(d.par?" — "+esc(d.par):"")
+    + (d.kind==="5pct" ? esc(" · "+d.pct+" % (Δ"+d.delta+"), "+d.titres+" titres") : "")
+    + '</div>';
+  if(d.kind==="5pct"){
+    h += '<div style="margin-top:8px"><div class="lbl" style="margin-bottom:5px">'
+      + '보유목적 — à lire sur DART, l\'API ne le renvoie pas</div><div class="chips">'
+      + ["단순투자","일반투자","경영참가"].map(function(o){
+          return '<button class="chip'+(d.objet===o?" on":"")+'" data-objet="'+o+'" '
+            + 'data-t="'+esc(ticker)+'" data-i="'+i+'">'+o+'</button>';
+        }).join("") + '</div>';
+    if(d.objet==="단순투자") h += '<p class="hint">Passif. N\'arme rien, ne relève pas la note.</p>';
+    else if(d.objet) h += '<p class="hint" style="color:var(--warn)">Pré-activisme. Trigger armé. Reprends le mémo avec le skill.</p>';
+    h += '</div>';
+  }
+  h += '</div>';
+  if(d.no) h += '<a class="lnk" target="_blank" rel="noreferrer" href="https://dart.fss.or.kr/dsaf001/main.do?rcpNo='+esc(d.no)+'">DART ↗</a>';
+  return h + '</div>';
+}
+
+function vFiche(){
+  var f = fiche(S.sel);
+  if(!f){ S.vue="titres"; return vTitres(); }
+  var M = f.memo || {};
+  var A = M.actif || {};
+  var P = M.potentiel || {};
+  var G = M.gouvernance || {};
+  var R = M.resultat || {};
+  var V = M.relatif || {};
+
+  /* ── Potentiel calculé ── */
+  var po = potentiel(f);
+  var pot = po ? po.v : null;
+
+  /* ── Verdict CSS ── */
+  function vcls(v){
+    return v==="ACHETER" ? "verd-buy" : v==="EVITER" ? "verd-avoid" : "verd-watch";
+  }
+
+  /* ── Échelle de valeur ── */
+  function fscale(){
+    var cours = f.cours || M.cours;
+    if(!cours) return "";
+    var e = {};
+    (P.echelle || []).forEach(function(x){
+      var i = x.indexOf(" : "); if(i>0) e[x.slice(0,i)] = x.slice(i+3);
+    });
+    var pts = [
+      { k:"Plancher",    v:nb(e["Plancher (net-net)"]),  c:"#34c759" },
+      { k:"Cible",       v:nb(e["Cible 2-4 ans"]),       c:"#0a84ff" },
+      { k:"Intrinsèque", v:nb(e["Valeur intrinsèque"]),  c:"#1d1d1f" }
+    ].filter(function(p){ return p.v && p.v>cours*.15 && p.v<cours*15; });
+    if(pts.length<1) return "";
+
+    /* ajouter le repère 80% VANT si disponible */
+    var vpa = f.vant_action || M.vant_action;
+    if(vpa && vpa>cours*.15 && vpa<cours*15)
+      pts.push({ k:"80 % VANT", v:Math.round(vpa*.8), c:"#5856d6" });
+
+    var vals = pts.map(function(p){return p.v;}).concat([cours]);
+    var lo = Math.min.apply(null,vals)*.9, hi = Math.max.apply(null,vals)*1.08;
+    var pos = function(v){ return ((v-lo)/(hi-lo))*100; };
+    var cible = pts.filter(function(p){return p.k==="Cible"||p.k==="80 % VANT";})[0];
+    var plancher = pts.filter(function(p){return p.k==="Plancher";})[0];
+    var up = po ? po.v : (cible ? Math.round((cible.v/cours-1)*100) : null);
+    var prot = plancher ? Math.round((plancher.v/cours-1)*100) : null;
+
+    var h = '<div class="fscale">';
+    h += '<div class="fscale-top"><div class="fscale-bloc">'
+       + '<div class="k">Potentiel · '+(po&&po.src?esc(po.src):"valeur intrinsèque")+'</div>'
+       + '<div class="v up">'+(up!==null?(up>0?"+":"")+up+" %":"—")+'</div></div>'
+       + '<div class="fscale-bloc right"><div class="k">'
+       + (prot!==null&&prot>0?"Plancher au-dessus du cours":"Protection sous le cours")
+       + '</div><div class="v">'+(prot!==null?(prot>0?"+":"")+prot+" %":"—")+'</div></div></div>';
+
+    h += '<div class="fbar">';
+    if(cible && cible.v>cours){
+      h += '<div class="fbar-pot" style="left:'+pos(cours)+'%;width:'+
+           Math.max(0,pos(cible.v)-pos(cours))+'%"></div>';
+    }
+    pts.forEach(function(p){
+      h += '<div class="ftick" style="left:'+pos(p.v)+'%;background:'+p.c+'"></div>';
+    });
+    h += '<div class="fnow" style="left:'+pos(cours)+'%"></div></div>';
+
+    var SY = symbole(f.devise);
+    h += '<div class="flegs"><div class="fleg">'
+       + '<i style="background:#1d1d1f"></i><b>Cours</b><em>'+cours.toLocaleString("fr-FR")+' '+SY+'</em></div>';
+    pts.forEach(function(p){
+      var d = Math.round((p.v/cours-1)*100);
+      h += '<div class="fleg"><i style="background:'+p.c+'"></i><b>'+esc(p.k)+'</b>'
+         + '<em>'+p.v.toLocaleString("fr-FR")+' '+SY+'</em>'
+         + '<em style="color:#c7c7cc">'+(d>0?"+":"")+d+" %</em></div>";
+    });
+    h += '</div></div>';
+    return h;
+  }
+
+  /* ── Rail gauche ── */
+  var h = '<div class="sec" style="padding:0;max-width:none"><div class="fiche">';
+
+  h += '<aside class="rail"><div class="rail-in">';
+  h += '<div class="rnom">'+esc(f.nom)+'</div>';
+  h += '<div class="rtick">'+drapeau(f.place)+' '+esc(f.ticker)+' · '+esc(f.place||"KRX")
+     + (f.detenu?' · <span style="color:#34c759">●</span> DÉTENU':'')+'</div>';
+
+  /* Potentiel dominant */
+  if(pot!==null){
+    h += '<div class="rpot-big"><div class="lab">Potentiel</div>'
+       + '<div class="val">'+(pot>0?"+":"")+pot+' %</div>'
+       + '<div class="src">vers '+(po?esc(po.src):"valeur intrinsèque")+'</div></div>';
+  }
+
+  /* Note + verdict */
+  h += '<div class="rnote2"><div class="n">'+esc(f.note)+'<s>/5</s></div>'
+     + (f.verdict?'<div class="verd '+vcls(f.verdict)+'">'+esc(f.verdict)+'</div>':'')
+     + '</div>';
+
+  /* Trigger */
+  if(f.trigger){
+    h += '<div class="rtrig2'+(f.arme?' armed':'')+'"><div class="tlab">'
+       + (f.arme?'Trigger armé':'Trigger')+'</div>'+esc(f.trigger)+'</div>';
+  }
+
+  /* Navigation */
+  if(M.actif){
+    h += '<nav class="rnav2">'
+       + [["s01","01 Actif"],["s02","02 Résultat"],["s03","03 Relatif"],
+          ["s04","04 Gouvernance"],["s05","05 Potentiel"],["s06","06 Verdict"]]
+         .map(function(x){return '<a href="#'+x[0]+'"><i>'+x[1].split(' ')[0]+'</i>'+esc(x[1].split(' ').slice(1).join(' '))+'</a>';})
+         .join("") + '</nav>';
+  }
+  if(f.importe) h += '<div class="rdate">mémo du '+esc(f.importe)+'</div>';
+  h += '</div></aside>';
+
+  /* ── Corps ── */
+  h += '<div class="fiche-body">';
+  h += '<button class="back" id="back" style="background:none;border:none;padding:0;'
+     + 'font-size:12.5px;color:#aeaeb2;cursor:pointer;margin-bottom:40px;display:block">'
+     + '← Tous les titres</button>';
+
+  /* Alertes */
+  if(M.partiel) h += '<div class="notice err" style="margin-bottom:24px"><b>Mémo partiel.</b> '
+    + 'Seuls la note et le verdict ont été récupérés. Le raisonnement est absent.</div>';
+  if(f.arme) h += '<div class="notice warn" style="margin-bottom:16px"><b>Trigger armé.</b> '+esc(f.trigger)+'</div>';
+  if(aRevoir(f)) h += '<div class="notice info" style="margin-bottom:16px"><b>Mémo dépassé.</b> '
+    + 'Un dépôt DART est postérieur. Reprends ce titre avec le skill.</div>';
+
+  /* Héros */
+  if(M.heros) h += '<p class="fheros">'+esc(M.heros)+'</p>';
+
+  /* Échelle de valeur */
+  h += fscale();
+
+  /* Bandeau de chiffres */
+  h += '<div class="fsec" style="margin-top:28px"><div class="fsynth">';
+  function fsy(k, v, main){
+    var vide = !eok(v);
+    return '<div class="fsy'+(main?' main':'')+'"><div class="k">'+esc(k)+'</div>'
+      + '<div class="v'+(vide?' na':'')+'">'+esc(vide?'—':v)+'</div></div>';
+  }
+  var cours = f.cours || M.cours;
+  var SYM = symbole(f.devise);
+  h += fsy("Cours", cours ? cours.toLocaleString("fr-FR")+" "+SYM : null, true)
+     + fsy("Capitalisation", M.capi)
+     + fsy("Net-net (VANN)", A.vann)
+     + fsy("VANT", A.vant)
+     + fsy("Trésorerie nette", A.net_cash)
+     + fsy("EV", A.ev);
+  h += '</div>';
+
+  /* Bilan DART replié */
+  var b = f.bilan, C = (b&&b.comptes)||{}, K = (b&&b.calcul)||{};
+  h += '<details class="fdart"><summary>Bilan DART (source primaire) · tirer, saisir le cours, copier</summary>'
+     + (b&&b.comptes ? '<div class="kpis" style="margin:0 0 10px">'
+       + vKpi("Capitaux propres",money(C.capitaux_propres),"—")
+       + vKpi("Trésorerie",money(C.tresorerie),"—")
+       + vKpi("Dettes",money(C.passif_total),"—")
+       + vKpi("Trésorerie nette",money(K.net_cash),"—")
+       + vKpi("VANN",money(K.vann),"—")+'</div>'
+       + '<p class="hint">Bilan '+esc(b.exercice)+' '+esc(b.periode)+'. Mapping heuristique.</p>' : '')
+     + (b&&b.erreur?'<div class="notice err">'+esc(b.erreur)+'</div>':'')
+     + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'
+     + '<button class="cta ghost" data-bilan="'+esc(f.ticker)+'">'
+     + ((b&&b.chargement)?'<span class="spin" style="border-top-color:var(--accent)"></span>':'')
+     + 'Tirer le bilan DART</button>'
+     + '<input class="in" id="cours" type="number" style="max-width:170px" '
+     + 'placeholder="Cours du jour (KRW)" value="'+(f.cours||"")+'"><br>'
+     + '<button class="cta ghost" data-copie="'+esc(f.ticker)+'">Copier pour l\'analyse</button>'
+     + '</div></details></div>';
+
+  if(!M || !M.actif){
+    h += '<div class="empty" style="margin-top:60px"><p>Aucun mémo. Analyse avec le skill, puis importe le JSON.</p>'
+       + '<button class="cta ghost" data-vue="import">Importer un mémo</button></div>';
+    return h + '</div></div></div>';
+  }
+
+  /* ── SECTIONS ── */
+  function section(num, id, label, S, kpis){
+    var ps = S.paras && S.paras.length ? S.paras : (S.commentaire ? [S.commentaire] : []);
+    if(!S.titre && !S.chapo && !ps.length && !kpis) return "";
+    var r = '<div class="fsec" id="'+id+'">'
+      + '<div class="fsec-h">'+esc(num)+'</div>';
+    if(S.titre) r += '<div class="fsec-titre">'+esc(S.titre)+'</div>';
+    if(S.chapo) r += '<p class="fsec-chapo">'+esc(S.chapo)+'</p>';
+    if(kpis) r += kpis;
+    ps.forEach(function(p){ r += '<p class="fpara">'+esc(p)+'</p>'; });
+    return r+'</div>';
+  }
+
+  h += section("01 · Actif", "s01", "Actif", A,
+    '<div class="fsynth" style="margin-bottom:18px">'
+    + fsy("Trésorerie nette", A.net_cash)
+    + fsy("Net-net (VANN)", A.vann)
+    + fsy("VANT", A.vant)
+    + fsy("EV", A.ev)
+    + fsy("VMLV", A.vmlv)
+    + '</div>');
+
+  h += section("02 · Résultat", "s02", "Résultat", R, null);
+  h += section("03 · Valeur relative", "s03", "Valeur relative", V, null);
+  if(V.pairs && V.pairs.length)
+    h += '<div class="tags" style="margin-top:10px">'
+       + V.pairs.map(function(p){return '<span class="tag h">'+esc(p)+'</span>';}).join("")
+       + '</div>';
+
+  h += section("04 · Gouvernance", "s04", "Gouvernance", G, null);
+  if(G.controle_famille_hors_autocontrole)
+    h += '<div class="notice info" style="margin-top:10px;font-size:13px"><b>Contrôle réel</b> : '
+       + esc(G.controle_famille_hors_autocontrole)+'</div>';
+
+  /* 05 Potentiel */
+  var s05 = M.potentiel || {};
+  h += '<div class="fsec" id="s05"><div class="fsec-h">05 · Potentiel</div>';
+  if(P.echelle && P.echelle.length){
+    h += '<div class="fech">'+P.echelle.map(function(e){
+      var i=e.indexOf(" : ");
+      return i<0?'<div class="fech-l"><span>'+esc(e)+'</span></div>'
+        :'<div class="fech-l"><b>'+esc(e.slice(0,i))+'</b><span>'+esc(e.slice(i+3))+'</span></div>';
+    }).join("")+'</div>';
+  }
+  var tri=[];
+  if(s05.tri_adverse) tri.push(["Adverse",s05.tri_adverse]);
+  if(s05.tri_adverse_plus) tri.push(["Adverse +",s05.tri_adverse_plus]);
+  if(s05.tri_base) tri.push(["Base",s05.tri_base]);
+  if(tri.length){
+    h += '<div class="ftri" style="margin-top:18px">'+tri.map(function(x){
+      return '<div class="ftri-c"><div class="ftri-k">'+esc(x[0])+'</div>'
+           + '<p class="ftri-p">'+esc(x[1])+'</p></div>';
+    }).join("")+'</div>';
+  }
+  if(s05.angle_mort_du_temps)
+    h += '<div class="notice warn" style="margin-top:14px;font-size:13px">'
+       + '<b>Angle mort du temps.</b> '+esc(s05.angle_mort_du_temps)+'</div>';
+  h += '</div>';
+
+  /* Avocat du diable */
+  if(M.avocat_du_diable){
+    h += '<div class="fsec"><div class="fsec-h">Avocat du diable</div>'
+       + '<div class="fdevil"><p>'+esc(M.avocat_du_diable)+'</p></div></div>';
+  }
+
+  /* Su / Déduit / Manque */
+  var cols=[];
+  function lst(arr,cls){
+    return '<ul class="clean">'+arr.map(function(t){
+      return '<li'+(cls?' class="'+cls+'"':'')+'>'+esc(t)+'</li>';
+    }).join("")+'</ul>';
+  }
+  if(M.sait&&M.sait.length) cols.push('<div><div class="fsec-h" style="margin-top:0">Su</div>'+lst(M.sait)+'</div>');
+  if(M.deduit&&M.deduit.length) cols.push('<div><div class="fsec-h" style="margin-top:0">Déduit</div>'+lst(M.deduit)+'</div>');
+  if(M.manque&&M.manque.length) cols.push('<div><div class="fsec-h" style="margin-top:0">Manque</div>'+lst(M.manque,"miss")+'</div>');
+  if(cols.length) h += '<div class="fsec"><div class="three">'+cols.join("")+'</div></div>';
+
+  if(M.catalyseurs&&M.catalyseurs.length)
+    h += '<div class="fsec"><div class="fsec-h">Catalyseurs datés</div>'+lst(M.catalyseurs)+'</div>';
+
+  /* 06 Verdict */
+  h += '<div class="fsec" id="s06"><div class="fsec-h">06 · Verdict</div>'
+     + '<div class="fverdict"><div class="fverdict-note">'
+     + '<div class="n">'+esc(M.note)+'<s>/5</s></div>'
+     + (M.verdict?'<div class="verd '+vcls(M.verdict)+'" style="margin-top:8px">'+esc(M.verdict)+'</div>':'')
+     + '</div><div class="fverdict-raison">'
+     + '<b>'+esc(M.pourquoi_note||"")+'</b>'
+     + (M.note_pratique?'<p style="margin-top:8px;font-size:13px">'+esc(M.note_pratique)+'</p>':'')
+     + '</div></div>'
+     + (M.memo_url?'<p class="hint" style="margin-top:12px"><a href="'+esc(M.memo_url)+'" target="_blank">Ouvrir le mémo HTML complet ↗</a></p>':'')
+     + '<p class="hint" style="margin-top:8px">Ni conseil ni recommandation personnalisée.</p></div>';
+
+  /* Mouvements de note */
+  var hist=(f.historique||[]).filter(function(x){return x.de!==null&&x.de!==undefined&&x.de!==x.vers;});
+  if(hist.length){
+    h += '<div class="fsec"><div class="fsec-h">Mouvements de la note</div><ul class="clean">'
+       + hist.slice().reverse().map(function(x){
+           var s=x.vers>x.de?"up":"dn";
+           return '<li>'+esc(x.date)+' · <b class="'+s+'">'+esc(x.de)+' → '+esc(x.vers)+'</b>'
+             +(x.pourquoi?' · '+esc(x.pourquoi):'')+'</li>';
+         }).join("") + '</ul></div>';
+  }
+
+  /* Dépôts DART */
+  if((f.depots||[]).length){
+    h += '<div class="fsec"><div class="fsec-h">Dépôts dans la fenêtre</div>'
+       + f.depots.map(function(d,i){return vDepot(d,f.ticker,i);}).join("")+'</div>';
+  }
+
+  h += '</div></div></div>';
+  return h;
+}
+
+function vVeille(){
+  var l=tousDepots();
+  var nbJp = S.fiches.filter(estJapon).length;
+  var h='<div class="sec">';
+  if(S.scan.erreur) h += '<div class="notice err">'+esc(S.scan.erreur)+'</div>';
+  // Le silence japonais n'est PAS un RAS : il faut le dire, pas le taire.
+  if(nbJp) h += '<div class="notice warn"><b>🇯🇵 '+nbJp+' titre'+(nbJp>1?"s":"")+' japonais hors périmètre.</b> '
+    + 'La veille n\'interroge que DART (Corée). Aucun dépôt japonais n\'est couvert : '
+    + 'l\'absence de signal sur ces titres ne veut rien dire. '
+    + 'À surveiller manuellement sur TDnet / EDINET.</div>';
+  h += '<div class="sechead"><h2>Ce qui est tombé</h2><span class="lbl">'
+    + (S.scan.fait ? esc(S.scan.attestes+"/"+S.scan.total+" attestés") : "non lancé") + '</span></div>';
+  if(!l.length){
+    h += '<div class="empty"><p>Rien dans la fenêtre, ou veille jamais lancée.</p>'
+      + '<button class="cta" id="btn-scan2">Lancer la veille</button></div>';
+  } else {
+    h += l.map(function(d){
+      return '<div class="fil'+(d.type?"":" cold")+'"><div class="d">'+esc(d.date)+'</div><div class="b">'
+        + '<div class="t">'+esc(d.type||"Dépôt")
+        + (d.fonds?'<span class="tag w" style="margin-left:8px">⚑ '+esc(d.fonds)+'</span>':'')
+        + '</div><div class="m">'+esc(d.ticker)+' · '+esc(d.nom)+' — '+esc(d.titre)
+        + (d.par?esc(" ("+d.par+")"):"")+'</div></div>'
+        + '<button class="lnk" data-open="'+esc(d.ticker)+'">Ouvrir →</button></div>';
+    }).join("");
+  }
+  return h+'</div>';
+}
+
+function vImport(){
+  var h='<div class="sec"><div class="sechead"><h2>Importer un mémo</h2></div>'
+    + '<p class="hint" style="margin-bottom:18px;font-size:14px">L\'analyse se fait avec le skill '
+    + '<b>Graham x Daubasses</b>, en session, là où la recherche et la contradiction existent. '
+    + 'Le skill embarque la donnée <b>dans le mémo .html lui-même</b> (plus besoin de gérer deux fichiers). Dépose le <code>.html</code> ici : la fiche '
+    + 'se remplit, la note entre au classement, le trigger s\'arme, l\'historique se met à jour. '
+    + 'Aucune ressaisie.</p>'
+    + '<div class="drop'+(S.over?" over":"")+'" id="drop">'
+    + '<h3>Dépose le mémo (.html ou .json)</h3><p>ou clique pour choisir. Plusieurs mémos à la fois : accepté.</p>'
+    + '<input type="file" id="file" accept=".json,.html,application/json,text/html" multiple style="display:none"></div>';
+  if(S.msg) h += '<div class="notice info" style="margin-top:16px">'+esc(S.msg)+'</div>';
+  if(S.err) h += '<div class="notice err" style="margin-top:16px">'+esc(S.err)+'</div>';
+  h += '<h3 class="blk">Ou colle le JSON</h3>'
+    + '<textarea class="in" id="colle" rows="7" placeholder=\'{"ticker":"029530","nom":"Sindoh","note":3,...}\'>'
+    + esc(S.colle) + '</textarea>'
+    + '<button class="cta" id="btn-colle" style="margin-top:10px">Importer</button>'
+    + '<h3 class="blk">Sauvegarde</h3>'
+    + '<button class="cta ghost" id="btn-export">Exporter toutes les fiches</button>'
+    + '<p class="hint">Les données vivent dans ce navigateur. Exporte de temps en temps.</p></div>';
+  return h;
+}
+
+function vCalendrier(){
+  var l=LOIS.slice().sort(function(a,b){ return jours(a.d)-jours(b.d); });
+  return '<div class="sec"><div class="sechead"><h2>Ce que la loi va faire</h2></div>'
+    + '<p class="hint" style="margin-bottom:20px;font-size:14px">Ces dates ne sont pas du contexte. '
+    + 'Elles donnent la <b>databilité</b>, seule chose qui fait monter une note. Sans date, pas de '
+    + 'probabilité datable.</p>'
+    + l.map(function(x){
+        var j=jours(x.d);
+        var cls = (j>0&&j<60) ? " soon" : (j<0 ? " past" : "");
+        return '<div class="cal"><div class="jm'+cls+'">'+(j>0?"J-"+j:"en vigueur")+'</div>'
+          + '<div style="flex:1"><div class="cname">'+esc(x.t)+'</div>'
+          + '<div style="font-size:13px;color:var(--ink2);margin-top:2px">'+esc(x.q)+'</div>'
+          + '<div class="tags"><span class="tag h">'+esc(x.c)+'</span></div></div>'
+          + '<div class="ctick">'+fr(x.d)+'</div></div>';
+      }).join("") + '</div>';
+}
+
+function vReglages(){
+  return '<div class="sec"><div class="panel">'
+    + '<h2 style="font-size:21px;font-weight:600;margin-bottom:22px">Réglages</h2>'
+    + '<div class="field"><label>Clé OpenDART</label>'
+    + '<input class="in" id="cle" type="password" placeholder="40 caractères" value="'+esc(S.cfg.cle)+'">'
+    + '<p class="hint">Laisse vide si tu as mis <code>OPENDART_KEY</code> en variable d\'environnement '
+    + 'Netlify : plus sûr, la clé ne quitte jamais le serveur.</p></div>'
+    + '<div class="field"><label>Relais</label>'
+    + '<input class="in" id="relais" value="'+esc(S.cfg.relais)+'">'
+    + '<p class="hint">OpenDART ne renvoie pas les en-têtes CORS : aucun navigateur ne peut l\'appeler '
+    + 'directement. Le relais fait l\'appel côté serveur. Par défaut <code>/.netlify/functions/scan</code>.</p></div>'
+    + '<div class="field"><label>Fenêtre du scan manuel</label><div class="chips">'
+    + [[1,"1 jour"],[7,"7 jours"],[30,"30 jours"]].map(function(p){
+        return '<button class="chip'+(S.cfg.fenetre===p[0]?" on":"")+'" data-fen="'+p[0]+'">'+p[1]+'</button>';
+      }).join("")
+    + '</div><p class="hint">La veille automatique (app fermée, chaque lundi) tourne côté Netlify et ne '
+    + 'dépend pas de ce réglage.</p></div>'
+    + '<div class="field"><label>Données</label>'
+    + '<button class="cta ghost" id="btn-reset">Réinitialiser</button></div>'
+    + '</div></div>';
+}
+
+function render(){
+  var c = "";
+  if(S.vue==="titres") c = S.sel ? vFiche() : vTitres();
+  else if(S.vue==="veille") c = vVeille();
+  else if(S.vue==="import") c = vImport();
+  else if(S.vue==="calendrier") c = vCalendrier();
+  else if(S.vue==="reglages") c = vReglages();
+  document.getElementById("app").innerHTML = vHeader() + c;
+  brancher();
+}
+
+/* ═══════════════════════ ÉVÉNEMENTS ═══════════════════════ */
+function brancher(){
+  var app=document.getElementById("app");
+
+  app.querySelectorAll("[data-vue]").forEach(function(b){
+    b.onclick=function(){ S.vue=b.getAttribute("data-vue"); S.sel=null; S.msg=null; S.err=null; render(); };
+  });
+  app.querySelectorAll("[data-open]").forEach(function(b){
+    b.onclick=function(){ S.sel=b.getAttribute("data-open"); S.vue="titres"; render();
+      window.scrollTo(0,0); };
+  });
+  app.querySelectorAll("[data-tri]").forEach(function(b){
+    b.onclick=function(){ S.tri=b.getAttribute("data-tri"); render(); };
+  });
+  app.querySelectorAll("[data-fen]").forEach(function(b){
+    b.onclick=function(){ S.cfg.fenetre=parseInt(b.getAttribute("data-fen"),10); save(); render(); };
+  });
+  app.querySelectorAll("[data-bilan]").forEach(function(b){
+    b.onclick=function(){ tirerBilan(b.getAttribute("data-bilan")); };
+  });
+  app.querySelectorAll("[data-copie]").forEach(function(b){
+    b.onclick=function(){
+      var f=fiche(b.getAttribute("data-copie"));
+      var t=JSON.stringify({ticker:f.ticker,nom:f.nom,cours:f.cours,bilan:f.bilan,depots:f.depots},null,2);
+      if(navigator.clipboard) navigator.clipboard.writeText(t);
+      b.textContent="Copié";
+      setTimeout(function(){ b.textContent="Copier pour l'analyse"; },1400);
+    };
+  });
+  app.querySelectorAll("[data-objet]").forEach(function(b){
+    b.onclick=function(){
+      var f=fiche(b.getAttribute("data-t"));
+      var i=parseInt(b.getAttribute("data-i"),10);
+      var o=b.getAttribute("data-objet");
+      f.depots[i].objet=o;
+      if(o!=="단순투자") f.arme=true;
+      save(); render();
+    };
+  });
+
+  var s1=document.getElementById("btn-scan"); if(s1) s1.onclick=lancerScan;
+  var s2=document.getElementById("btn-scan2"); if(s2) s2.onclick=lancerScan;
+  var bk=document.getElementById("back"); if(bk) bk.onclick=function(){ S.sel=null; render(); };
+
+  var fl=document.getElementById("filtre");
+  if(fl){ fl.oninput=function(){ S.filtre=fl.value; var p=fl.selectionStart; render();
+    var n=document.getElementById("filtre"); if(n){ n.focus(); n.setSelectionRange(p,p); } }; }
+
+  var co=document.getElementById("cours");
+  if(co){ co.onblur=function(){ var f=fiche(S.sel); f.cours=co.value?+co.value:null; save(); render(); }; }
+
+  var cl=document.getElementById("cle");
+  if(cl){ cl.onblur=function(){ S.cfg.cle=cl.value.trim(); save(); }; }
+  var rl=document.getElementById("relais");
+  if(rl){ rl.onblur=function(){ S.cfg.relais=rl.value.trim(); save(); }; }
+
+  var dp=document.getElementById("drop"), fi=document.getElementById("file");
+  if(dp){
+    dp.onclick=function(){ fi.click(); };
+    dp.ondragover=function(e){ e.preventDefault(); dp.classList.add("over"); };
+    dp.ondragleave=function(){ dp.classList.remove("over"); };
+    dp.ondrop=function(e){ e.preventDefault(); dp.classList.remove("over"); lireFichiers(e.dataTransfer.files); };
+    fi.onchange=function(){ lireFichiers(fi.files); };
+  }
+  var ta=document.getElementById("colle");
+  if(ta){ ta.oninput=function(){ S.colle=ta.value; }; }
+  var bc=document.getElementById("btn-colle");
+  if(bc){ bc.onclick=function(){ if(S.colle.trim()) importer(S.colle); }; }
+
+  var be=document.getElementById("btn-export");
+  if(be){ be.onclick=function(){
+    var blob=new Blob([JSON.stringify(S.fiches,null,2)],{type:"application/json"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="decotes-sauvegarde-"+new Date().toISOString().slice(0,10)+".json";
+    a.click();
+  }; }
+
+  var br=document.getElementById("btn-reset");
+  if(br){ br.onclick=function(){
+    if(!confirm("Effacer fiches, mémos et historique ?")) return;
+    S.fiches=seed(); save(); render();
+  }; }
+}
+
+render();
+chargerSocle().then(function(n){ if(n) render(); });
+})();
+</script>
+</body>
+</html>
