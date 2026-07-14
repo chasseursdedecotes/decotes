@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Décotes</title>
+<style>
+  :root{
+    --bg:#fff; --surface:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#a1a1a6;
+    --line:rgba(0,0,0,.09); --line2:rgba(0,0,0,.05);
+    --accent:#0066cc; --accent-soft:#eff6ff;
+    --up:#1a7f37; --up-soft:#e9f6ed; --down:#c9372c; --down-soft:#fdeceb;
+    --warn:#9a6700; --warn-soft:#fff8e6;
+    --r:14px; --shadow:0 1px 2px rgba(0,0,0,.04),0 10px 30px rgba(0,0,0,.07);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Helvetica Neue",sans-serif;
+    font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
+  #app{max-width:1120px;margin:0 auto;padding:0 24px 100px}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,textarea{font:inherit;color:inherit}
+  a{color:var(--accent);text-decoration:none}
+  ::selection{background:var(--accent);color:#fff}
+
+  .top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.84);
+    backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid var(--line2)}
+  .topin{display:flex;align-items:center;justify-content:space-between;height:52px;
+    max-width:1120px;margin:0 auto;padding:0 24px;gap:14px}
+  .brand{font-size:17px;font-weight:600;letter-spacing:-.02em}
+  .tabs{display:flex;gap:2px}
+  .tab{padding:6px 12px;border-radius:999px;font-size:13px;color:var(--ink2)}
+  .tab:hover{background:var(--surface)}
+  .tab.on{background:var(--ink);color:#fff}
+  .cta{background:var(--accent);color:#fff;padding:7px 15px;border-radius:999px;font-size:13px;font-weight:500}
+  .cta:hover{opacity:.88}
+  .cta:disabled{opacity:.4;cursor:default}
+  .cta.ghost{background:var(--surface);color:var(--ink)}
+  .lnk{font-size:12.5px;color:var(--accent);white-space:nowrap}
+
+  .hero{padding:46px 0 32px;border-bottom:1px solid var(--line2)}
+  .hero h1{font-size:34px;font-weight:600;letter-spacing:-.03em;line-height:1.14}
+  .hero p{color:var(--ink2);margin-top:7px}
+  .attest{display:inline-flex;align-items:center;gap:7px;margin-top:18px;background:var(--surface);
+    border-radius:999px;padding:5px 13px;font-size:12.5px;color:var(--ink2)}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--up);flex-shrink:0}
+  .dot.off{background:var(--ink3)}
+
+  .sec{padding:30px 0}
+  .sechead{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+  .sechead h2{font-size:21px;font-weight:600;letter-spacing:-.02em}
+  .lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:12px}
+
+  .card{border:1px solid var(--line);border-radius:var(--r);padding:16px;cursor:pointer;
+    transition:box-shadow .18s,transform .18s}
+  .card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+  .card.armed{border-color:var(--warn);background:var(--warn-soft)}
+  .card.stale{border-color:var(--accent)}
+  .chead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .cname{font-size:15px;font-weight:590;letter-spacing:-.01em}
+  .ctick{font-size:12px;color:var(--ink3)}
+  .note{font-size:26px;font-weight:600;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .note s{font-size:12px;color:var(--ink3);font-weight:400;text-decoration:none}
+  .pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;margin-top:9px}
+  .p-buy{background:var(--up-soft);color:var(--up)}
+  .p-watch{background:var(--surface);color:var(--ink2)}
+  .p-avoid{background:var(--down-soft);color:var(--down)}
+  .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+  .tag{font-size:11px;background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:999px}
+  .tag.w{background:var(--warn-soft);color:var(--warn)}
+  .tag.h{background:var(--surface);color:var(--ink2)}
+  .held{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--up);background:var(--up-soft);
+    padding:2px 7px;border-radius:999px}
+
+  .panel{border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:var(--shadow)}
+  .back{font-size:13px;color:var(--ink2);margin-bottom:16px;display:inline-block}
+  h3.blk{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);
+    margin:38px 0 12px;padding-top:20px;border-top:1px solid var(--line2)}
+  h3.blk:first-of-type{border-top:0;padding-top:0}
+  /* Le heros : une phrase, pas un mur. Il porte la these, il doit se lire d'un coup. */
+  .heros{font-size:19px;font-weight:500;letter-spacing:-.015em;line-height:1.5;padding:24px 0 22px;
+    border-bottom:1px solid var(--line2);color:var(--ink);max-width:68ch}
+  /* Titre de section : ce que l'analyste a voulu dire. */
+  .stitre{font-size:19px;font-weight:600;letter-spacing:-.02em;line-height:1.35;margin:0 0 10px;max-width:60ch}
+  /* Chapo : le resume de la section, en gris, plus grand que le corps. */
+  .chapo{font-size:15.5px;line-height:1.6;color:var(--ink2);margin:0 0 18px;max-width:68ch}
+  /* Corps : mesure de lecture stricte. Au-dela de ~70 caracteres, l'oeil decroche. */
+  .para{font-size:15px;line-height:1.68;margin:0 0 15px;max-width:68ch;color:var(--ink)}
+  .para:last-child{margin-bottom:0}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px;background:var(--line);
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:16px 0}
+  .kpi{background:var(--bg);padding:13px 14px}
+  .kpi .k{font-size:11px;color:var(--ink3);margin-bottom:3px}
+  .kpi .v{font-size:15px;font-weight:600;letter-spacing:-.02em;word-break:break-word}
+  .kpi .v.na{color:var(--ink3);font-weight:400;font-size:13px}
+  ul.clean{list-style:none}
+  ul.clean li{padding:7px 0;border-bottom:1px solid var(--line2);font-size:14px}
+  ul.clean li:last-child{border:0}
+  li.miss{color:var(--down)}
+  .prose{font-size:15px;line-height:1.62}
+  .prose.rupt{color:var(--down)}
+  /* L'avocat du diable est une objection, pas un commentaire. Il doit trancher. */
+  .devil{border-left:3px solid var(--down);background:var(--down-soft);border-radius:0 10px 10px 0;
+    padding:16px 20px;font-size:15px;line-height:1.62;color:#8a2118;max-width:70ch;margin:0}
+  .three{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:24px}
+  .verdictbox{display:flex;gap:24px;align-items:center;background:var(--surface);border-radius:var(--r);
+    padding:20px 22px;flex-wrap:wrap}
+
+  .fil{display:flex;gap:14px;padding:13px 0;border-bottom:1px solid var(--line2);align-items:flex-start}
+  .fil .d{font-size:12px;color:var(--ink3);width:82px;flex-shrink:0;padding-top:2px}
+  .fil .b{flex:1;min-width:0}
+  .fil .t{font-size:14px;font-weight:520}
+  .fil .m{font-size:12.5px;color:var(--ink2);margin-top:2px;word-break:break-word}
+  .fil.cold .t{font-weight:400;color:var(--ink2)}
+
+  .in{border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px;width:100%;background:var(--bg)}
+  .in:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .chips{display:flex;gap:5px;flex-wrap:wrap}
+  .chip{padding:6px 12px;border-radius:999px;font-size:12.5px;background:var(--surface);color:var(--ink2)}
+  .chip.on{background:var(--ink);color:#fff}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:6px}
+  .hint{font-size:12.5px;color:var(--ink3);line-height:1.55;margin-top:8px}
+  code{background:var(--surface);padding:1px 5px;border-radius:4px;font-size:12.5px}
+
+  .notice{border-radius:var(--r);padding:15px 17px;font-size:14px;line-height:1.55;margin-bottom:16px}
+  .notice.info{background:var(--accent-soft);color:#0a4a91}
+  .notice.warn{background:var(--warn-soft);color:#7a5200}
+  .notice.err{background:var(--down-soft);color:#a3271d}
+  .empty{text-align:center;padding:60px 20px;color:var(--ink3)}
+  .empty p{margin-bottom:16px}
+
+  .drop{border:2px dashed var(--line);border-radius:18px;padding:44px 24px;text-align:center;cursor:pointer;
+    transition:border-color .15s,background .15s}
+  .drop.over{border-color:var(--accent);background:var(--accent-soft)}
+  .drop h3{font-size:17px;font-weight:600;margin-bottom:6px}
+  .drop p{color:var(--ink2);font-size:14px}
+
+  .cal{display:flex;gap:14px;padding:15px 0;border-bottom:1px solid var(--line2);align-items:center}
+  .jm{font-size:13px;font-weight:700;width:66px;flex-shrink:0}
+  .jm.soon{color:var(--down)}
+  .jm.past{color:var(--ink3)}
+
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:#fff;
+    border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:5px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  @media(max-width:640px){#app{padding:0 16px 80px}.topin{padding:0 16px}
+    .hero h1{font-size:27px}.tabs{overflow-x:auto}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   DÉCOTES — poste de commandement.
+   JavaScript natif. Aucune dépendance, aucun CDN, aucune compilation.
+   Si ça s'affiche, ça marchera toujours.
+
+   CE QU'ELLE FAIT : veille DART attestante, registre des mémos classés par
+   note, triggers armés, file de réanalyse, calendrier légal, bilan primaire.
+
+   CE QU'ELLE NE FAIT PAS : analyser. L'analyse se fait avec le skill Graham x
+   Daubasses, en session, là où la recherche et la contradiction existent.
+   L'app dit QUOI analyser, et se souvient. Elle ne juge pas.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function(){
+"use strict";
+
+/* ---------- utilitaires ---------- */
+function esc(s){
+  if(s===null||s===undefined) return "";
+  return String(s).replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function get(k,d){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+function set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function jours(d){ return Math.ceil((new Date(d)-new Date())/864e5); }
+function fr(d){ try{ return new Date(d).toLocaleDateString("fr-FR"); }catch(e){ return ""; } }
+function eok(v){ return v!==null && v!==undefined && v!==""; }
+
+/* Sert à SURLIGNER, jamais à filtrer. Filtrer par mots-clés est la faute qui a
+   fait rater le franchissement VIP du 06/07/2026. Tous les dépôts sont montrés. */
+var CHAUD={"소각":"Annulation d'actions","자기주식":"Autocontrôle","대량보유":"Franchissement 5%",
+ "공개매수":"OPA / TOB","기업가치":"Value-Up","배당":"Dividende","주요사항":"Fait majeur",
+ "유상증자":"Dilution","전환사채":"Dilution (OC)","최대주주":"Changement de contrôle",
+ "주주제안":"Proposition d'actionnaire","손익구조":"Variation de résultat","합병":"Fusion",
+ "분할":"Scission","임원":"Initiés","주주총회":"Assemblée générale"};
+var FONDS=["브이아이피","VIP","얼라인","Align","플래시라이트","밸류파트너스","화이트박스",
+ "팰리서","신영","트러스톤","케이씨지아이","KCGI","라이프자산운용","머스트"];
+function chaud(n){ for(var k in CHAUD){ if(n && n.indexOf(k)>=0) return CHAUD[k]; } return null; }
+function fondsDe(t){ if(!t) return null; for(var i=0;i<FONDS.length;i++){ if(t.indexOf(FONDS[i])>=0) return FONDS[i]; } return null; }
+
+var LOIS=[
+ {d:"2026-07-23",t:"Règle des 3 % consolidée",q:"Plafonne les voix du contrôlant pour l'élection des administrateurs membres du comité d'audit. Le levier le plus puissant contre un bloc familial.",c:"Contrôle familial verrouillé"},
+ {d:"2026-09-10",t:"Vote cumulatif, administrateur séparé",q:"Un minoritaire peut concentrer ses voix sur un siège. Rend une campagne d'AG viable sous 10 % du capital.",c:"Titres avec fonds au capital"},
+ {d:"2026-03-06",t:"Annulation obligatoire de l'autocontrôle",q:"3e révision du Code de commerce. L'autocontrôle acquis doit être annulé, en principe sous un an. Stock antérieur vers 09/2027.",c:"Fort autocontrôle"},
+ {d:"2026-05-01",t:"Japon : refonte de la règle des 5 %",q:"Les dérivés cash-settled comptent désormais. Détection des fonds plus fine.",c:"Watchlist japonaise"}
+];
+
+var SEED_RAW=[
+ ["029530","Sindoh",1],["001560","Cheil Grinding Wheel",1],["009680","Motonic",1],
+ ["016580","Whan In Pharm",1],["415380","Studio Samick",1],["010240","Heungkuk Metaltech",1],
+ ["033270","Korea United Pharm",1],["005680","Samyoung Electronics",1],["010960","Samho Development",1],
+ ["009300","Sam-A Pharm",1],["033920","Muhak",1],["221980","KD Chem",1],["003650","Michang Oil",1],
+ ["024800","Yoosung T&S",0],["004250","National Plastic (NPC)",0],["408920","Messe eSang",0],
+ ["241710","Cosmecca Korea",0],["005710","Daewon Sanup",0],["143240","Saramin",0],
+ ["210540","DY Power",0],["002170","SYTS Corp",0],["066620","Kukbo Design",0],
+ ["263020","DK&D",0],["080010","eSang Networks",0],["004150","Hansol Holdings",0],
+ ["023910","Daehan Pharmaceutical",0],["015230","Daechang Forging",0],["069730","DSR Wire",0],
+ ["000590","CS Holdings",0],["014440","Youngbo Chemical",0],["053620","Taeyang",0],
+ ["037350","Sungdo E&C",0],["192440","Spigen Korea",0],["035890","Seohee Construction",0],
+ ["006660","Samsung Climate Control",0],["017480","Samhyun Steel",0],["000970","Korea Castiron Pipe",0],
+ ["025000","KPX Chemical",0],["032560","Hwang Kum Steel",0],["004780","Daeryuk Can",0],
+ ["084010","Daehan Steel",0],["024090","DCM Corp",0],["079960","Dongyang E&P",0],
+ ["032750","Samjin",0],["025530","SJM Holdings",0],["123700","SJM Co",0],
+ ["004890","Dongil Industries",0],["001770","Shin Hwa Dynamics",0],["021820","Sewon Precision",0],
+ ["004700","Chokwang Leather",0],["000850","Hwacheon Machine Tool",0],["079170","Hanchang Industry",0],
+ ["120240","Daejung Chemicals",0],["014830","UNID",0]
+];
+function seed(){
+  return SEED_RAW.map(function(r){
+    return {ticker:r[0],nom:r[1],detenu:!!r[2],memo:null,note:null,verdict:null,trigger:null,
+      arme:false,depots:[],bilan:null,cours:null,historique:[],importe:null};
+  });
+}
+
+/* ---------- état ---------- */
+var S = {
+  vue:"titres", sel:null, tri:"note", filtre:"",
+  fiches: get("dv:fiches", null) || seed(),
+  cfg: Object.assign({cle:"",relais:"/.netlify/functions/scan",fenetre:7}, get("dv:cfg",{})),
+  scan: Object.assign({actif:false,erreur:null,fait:null,attestes:0,total:0}, get("dv:scan",{})),
+  msg:null, err:null, over:false, colle:""
+};
+S.scan.actif=false;
+
+function save(){ set("dv:fiches",S.fiches); set("dv:cfg",S.cfg); }
+function fiche(t){ for(var i=0;i<S.fiches.length;i++){ if(S.fiches[i].ticker===t) return S.fiches[i]; } return null; }
+
+/* ---------- dérivés ---------- */
+function signaux(f){ return (f.depots||[]).filter(function(d){ return d.type; }); }
+function aRevoir(f){
+  var s=signaux(f);
+  if(!s.length) return false;
+  if(!f.memo) return true;
+  var dm=String(f.importe||"").replace(/-/g,"");
+  return s.some(function(d){ return String(d.date||"").replace(/-/g,"")>dm; });
+}
+function tousDepots(){
+  var l=[];
+  S.fiches.forEach(function(f){
+    (f.depots||[]).forEach(function(d){
+      var c=Object.assign({},d); c.ticker=f.ticker; c.nom=f.nom; l.push(c);
+    });
+  });
+  l.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
+  return l;
+}
+
+/* ---------- VEILLE (par lots : une fonction Netlify expire à 10 s) --------- */
+function lancerScan(){
+  if(S.scan.actif) return;
+  S.scan.actif=true; S.scan.erreur=null; S.scan.progres="0/"+S.fiches.length; render();
+
+  var end=new Date(), bgn=new Date(Date.now()-S.cfg.fenetre*864e5);
+  function F(d){ return d.toISOString().slice(0,10).replace(/-/g,""); }
+  var tickers=S.fiches.map(function(f){ return f.ticker; });
+  var LOT=8, i=0, attestes=0, total=0, erreurs=[];
+
+  function lot(){
+    if(i>=tickers.length){
+      S.scan={actif:false,erreur:(erreurs.length?erreurs.join(" · "):null),
+        fait:new Date().toISOString(),attestes:attestes,total:total,progres:null};
+      set("dv:scan",S.scan); save(); S.vue="veille"; render();
+      return;
+    }
+    var chunk=tickers.slice(i,i+LOT);
+    fetch(S.cfg.relais,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({cle:S.cfg.cle, tickers:chunk, bgn:F(bgn), end:F(end)})
+    }).then(function(r){
+      if(r.status===404) throw new Error("Relais introuvable (404). Les fonctions Netlify ne sont pas déployées. Ouvre /.netlify/functions/ping dans ton navigateur pour vérifier.");
+      if(!r.ok) throw new Error("Relais : HTTP "+r.status);
+      return r.json();
+    }).then(function(d){
+      if(d.erreur) throw new Error(d.erreur);
+      attestes+=(d.attestes||0); total+=(d.total||chunk.length);
+      (d.resultats||[]).forEach(function(res){
+        var f=fiche(res.ticker); if(!f) return;
+        var dep=[];
+        (res.filings||[]).forEach(function(x){
+          dep.push({date:x.rcept_dt,titre:x.report_nm,par:x.flr_nm,no:x.rcept_no,
+            type:chaud(x.report_nm), fonds:(fondsDe(x.flr_nm)||fondsDe(x.report_nm)), kind:"depot"});
+        });
+        (res.majorstock||[]).filter(function(x){return x.in_window;}).forEach(function(x){
+          dep.push({date:x.rcept_dt,titre:"Franchissement 5 % ("+x.report_tp+")",par:x.repror,
+            no:x.rcept_no,type:"Franchissement 5%",fonds:fondsDe(x.repror),kind:"5pct",
+            pct:x.stkrt,delta:x.stkrt_irds,titres:x.stkqy,objet:null});
+        });
+        dep.sort(function(a,b){ return String(b.date||"").localeCompare(String(a.date||"")); });
+        f.depots=dep;
+      });
+      i+=LOT;
+      S.scan.progres=Math.min(i,tickers.length)+"/"+tickers.length;
+      render();
+      lot();
+    }).catch(function(e){
+      S.scan.actif=false; S.scan.progres=null;
+      S.scan.erreur=String(e.message||e); render();
+    });
+  }
+  lot();
+}
+
+function tirerBilan(t){
+  var f=fiche(t); if(!f) return;
+  f.bilan={chargement:true}; render();
+  fetch(S.cfg.relais.replace("/scan","/bilan"),{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({cle:S.cfg.cle,ticker:t})
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if(d.erreur) throw new Error(d.erreur);
+    d.tire=new Date().toISOString();
+    f.bilan=d; save(); render();
+  }).catch(function(e){
+    f.bilan={erreur:String(e.message||e)}; render();
+  });
+}
+
+/* ---------- IMPORT ---------- */
+function importer(txt, degrade){
+  var data;
+  try{ data=JSON.parse(txt); }
+  catch(e){ S.err="JSON invalide. Dépose le fichier .json produit par le skill à côté du mémo."; S.msg=null; render(); return; }
+  var liste=Array.isArray(data)?data:[data];
+  var ok=0, inconnus=[];
+  liste.forEach(function(m){
+    if(!m||!m.ticker) return;
+    var f=fiche(String(m.ticker));
+    if(!f){ inconnus.push(m.ticker); return; }
+    var d=m.date||new Date().toISOString().slice(0,10);
+    f.historique=(f.historique||[]).concat([{date:d,de:f.note,vers:m.note,
+      verdict:m.verdict,pourquoi:m.pourquoi_note||""}]);
+    f.memo=m;
+    if(m.note!==undefined && m.note!==null) f.note=m.note;
+    if(m.verdict) f.verdict=m.verdict;
+    if(m.trigger) f.trigger=m.trigger;
+    f.arme=!!m.arme;
+    if(m.cours!==undefined && m.cours!==null) f.cours=m.cours;
+    if(m.detenu!==undefined && m.detenu!==null) f.detenu=!!m.detenu;
+    f.importe=d;
+    ok++;
+  });
+  save();
+  S.msg = ok ? (ok+" mémo"+(ok>1?"s":"")+" importé"+(ok>1?"s":"")+".") : null;
+  S.err = inconnus.length ? ("Tickers absents de la watchlist, ignorés : "+inconnus.join(", ")) : null;
+  S.colle="";
+  render();
+  if(ok && !degrade) setTimeout(function(){ S.vue="titres"; S.msg=null; render(); }, 900);
+}
+
+/* Extrait une fiche d'un fichier .html. Voie sûre : la balise JSON embarquée
+   que le skill place dans le mémo. Voie de secours : lecture du balisage, en
+   PRÉVENANT que c'est deviné (fragile si le gabarit change). */
+function extraireHTML(html){
+  // Voie sure : la balise <script type=application/json id=fiche> ... fermeture, que le
+  var m = html.match(/<script[^>]*id=["']fiche["'][^>]*>([\s\S]*?)<\/script>/i);
+  if(m){
+    try{ return {data:JSON.parse(m[1].trim()), devine:false}; }
+    catch(e){ /* tombe vers la voie de secours */ }
+  }
+  // Voie de secours : deviner depuis le balisage. Signalée comme telle.
+  function pick(re){ var x = html.match(re); return x ? x[1].trim() : null; }
+  var ticker = pick(/data-ticker=["']([0-9]{6})["']/i) || pick(/\((\d{6})\)/);
+  if(!ticker) return {erreur:"HTML sans balise JSON (id=\"fiche\") et sans ticker repérable. Régénère le mémo avec le skill à jour, qui embarque le JSON."};
+  var noteTxt = pick(/data-note=["']([0-9.]+)["']/i) || pick(/([0-5](?:[.,]5)?)\s*\/\s*5/);
+  var note = noteTxt ? parseFloat(String(noteTxt).replace(",", ".")) : null;
+  var verdict = pick(/data-verdict=["'](ACHETER|SURVEILLER|EVITER)["']/i)
+    || pick(/\b(ACHETER|SURVEILLER|EVITER)\b/);
+  return {devine:true, data:{ticker:ticker, note:(isNaN(note)?null:note), verdict:verdict,
+    date:new Date().toISOString().slice(0,10)}};
+}
+
+function lireFichiers(fs){
+  Array.prototype.slice.call(fs).forEach(function(file){
+    var r=new FileReader();
+    var estHtml = /\.html?$/i.test(file.name||"") ;
+    r.onload=function(){
+      var txt=String(r.result);
+      if(estHtml || /^\s*<(!doctype|html)/i.test(txt)){
+        var res=extraireHTML(txt);
+        if(res.erreur){ S.err=res.erreur; S.msg=null; render(); return; }
+        if(res.devine) res.data.partiel=true;          // marque la fiche comme dégradée
+        importer(JSON.stringify(res.data), res.devine); // ne bascule PAS si dégradé
+        if(res.devine){
+          S.err="IMPORT DÉGRADÉ. Ce mémo ne contient pas la balise JSON : seuls le ticker, la note "
+            +"et le verdict ont pu être devinés depuis le balisage. Thèse, gouvernance, catalyseurs, "
+            +"avocat du diable : PERDUS. Régénère le mémo avec le skill à jour, ou envoie-le à Claude "
+            +"pour qu'il y injecte la balise.";
+          S.msg=null;
+          render();
+        }
+      } else {
+        importer(txt);
+      }
+    };
+    r.readAsText(file);
+  });
+}
+
+/* ═══════════════════════ RENDU ═══════════════════════ */
+function vNote(n,taille){
+  var t = taille || 26;
+  if(n===null||n===undefined)
+    return '<div class="note" style="font-size:'+t+'px;color:var(--ink3)">—</div>';
+  return '<div class="note" style="font-size:'+t+'px">'+esc(n)+'<s>/5</s></div>';
+}
+function vPill(v){
+  if(!v) return "";
+  var c = v==="ACHETER" ? "p-buy" : (v==="EVITER" ? "p-avoid" : "p-watch");
+  return '<span class="pill '+c+'">'+esc(v)+'</span>';
+}
+function vKpi(k,v,na){
+  var vide = !eok(v);
+  return '<div class="kpi"><div class="k">'+esc(k)+'</div><div class="v'+(vide?" na":"")+'">'
+    + (vide ? esc(na||"—") : esc(v)) + '</div></div>';
+}
+function money(v){
+  if(!eok(v)) return null;
+  if(typeof v==="number") return Math.round(v/1e8).toLocaleString("fr-FR")+" 억";
+  return v;
+}
+
+function vHeader(){
+  var chauds = tousDepots().filter(function(d){return d.type;}).length;
+  var tabs=[["titres","Titres"],["veille","Veille"+(chauds?" · "+chauds:"")],["import","Importer"],
+    ["calendrier","Calendrier"],["reglages","Réglages"]];
+  return '<div class="top"><div class="topin">'
+    + '<div class="brand">Décotes</div>'
+    + '<div class="tabs">' + tabs.map(function(t){
+        return '<button class="tab'+(S.vue===t[0]?" on":"")+'" data-vue="'+t[0]+'">'+esc(t[1])+'</button>';
+      }).join("") + '</div>'
+    + '<button class="cta" id="btn-scan"'+(S.scan.actif?" disabled":"")+'>'
+    + (S.scan.actif ? '<span class="spin"></span>'+esc(S.scan.progres||'Scan') : 'Lancer la veille') + '</button>'
+    + '</div></div>';
+}
+
+function vTitres(){
+  var armes = S.fiches.filter(function(f){return f.arme;}).length;
+  var revoir = S.fiches.filter(aRevoir);
+  var chauds = tousDepots().filter(function(d){return d.type;}).length;
+  var memos = S.fiches.filter(function(f){return f.memo;}).length;
+
+  var titre, sous;
+  if(armes>0){ titre = armes+" trigger"+(armes>1?"s armés.":" armé.");
+    sous = "Un fait daté a franchi le seuil que tu avais fixé. Reprends le mémo."; }
+  else if(revoir.length>0){ titre = revoir.length+" titre"+(revoir.length>1?"s":"")+" à réanalyser.";
+    sous = "Un dépôt DART est postérieur au dernier mémo. La note ne l'intègre pas."; }
+  else if(chauds>0){ titre = chauds+" dépôt"+(chauds>1?"s":"")+" à qualifier.";
+    sous = "Des dépôts sont tombés. Aucun n'arme de trigger."; }
+  else { titre = "Rien d'armé.";
+    sous = "Aucun trigger armé sur les 53 titres. Une semaine calme est une information."; }
+
+  var h = '<div class="hero"><h1>'+esc(titre)+'</h1><p>'+esc(sous)+'</p>'
+    + '<div class="attest"><span class="dot'+(S.scan.fait?"":" off")+'"></span>'
+    + (S.scan.fait
+        ? esc(S.scan.attestes+"/"+S.scan.total+" titres attestés sur le flux DART · "+fr(S.scan.fait))
+        : "Veille jamais lancée. Aucune couverture attestée.")
+    + esc(" · "+memos+" mémos") + '</div></div>';
+
+  if(revoir.length>0){
+    h += '<div class="sec" style="padding-bottom:0"><div class="notice info"><b>À reprendre avec le skill.</b> '
+      + esc(revoir.map(function(f){return f.nom;}).join(", "))
+      + '. Un dépôt DART est postérieur au dernier mémo : la note ne l\'intègre pas encore.</div></div>';
+  }
+
+  var tris=[["note","Meilleures notes"],["revoir","À réanalyser"],["arme","Triggers armés"],
+    ["detenu","Détenus"],["nom","A→Z"]];
+  h += '<div class="sec"><div class="sechead">'
+    + '<input class="in" id="filtre" style="max-width:250px" placeholder="Filtrer" value="'+esc(S.filtre)+'">'
+    + '<div class="chips">' + tris.map(function(t){
+        return '<button class="chip'+(S.tri===t[0]?" on":"")+'" data-tri="'+t[0]+'">'+esc(t[1])+'</button>';
+      }).join("") + '</div></div>';
+
+  var l = S.fiches.slice();
+  if(S.filtre.trim()){
+    var q=S.filtre.toLowerCase();
+    l=l.filter(function(f){ return f.nom.toLowerCase().indexOf(q)>=0 || f.ticker.indexOf(q)>=0; });
+  }
+  function n(x){ return (x===null||x===undefined) ? -1 : x; }
+  if(S.tri==="note")   l.sort(function(a,b){ return (n(b.note)-n(a.note)) || a.nom.localeCompare(b.nom); });
+  if(S.tri==="revoir") l.sort(function(a,b){ return ((aRevoir(b)?1:0)-(aRevoir(a)?1:0)) || (n(b.note)-n(a.note)); });
+  if(S.tri==="arme")   l.sort(function(a,b){ return ((b.arme?1:0)-(a.arme?1:0)) || (n(b.note)-n(a.note)); });
+  if(S.tri==="detenu") l.sort(function(a,b){ return ((b.detenu?1:0)-(a.detenu?1:0)) || (n(b.note)-n(a.note)); });
+  if(S.tri==="nom")    l.sort(function(a,b){ return a.nom.localeCompare(b.nom); });
+
+  h += '<div class="grid">' + l.map(function(f){
+    var sig=signaux(f), cls = f.arme ? " armed" : (aRevoir(f) ? " stale" : "");
+    var t = '<div class="card'+cls+'" data-open="'+f.ticker+'">'
+      + '<div class="chead"><div style="min-width:0">'
+      + '<div class="cname">'+esc(f.nom)+'</div>'
+      + '<div class="ctick">'+esc(f.ticker)+(f.detenu?' · <span class="held">DÉTENU</span>':'')+'</div>'
+      + '</div>' + vNote(f.note) + '</div>';
+    t += (f.memo && f.memo.partiel) ? '<span class="pill p-avoid">Mémo partiel</span>'
+      : (f.verdict ? vPill(f.verdict) : '<span class="pill p-watch">Pas de mémo</span>');
+    if(sig.length){
+      t += '<div class="tags">' + sig.slice(0,2).map(function(s){
+        return '<span class="tag'+(s.fonds?" w":"")+'">'+esc(s.type)+'</span>';
+      }).join("") + (sig.length>2 ? '<span class="tag h">+'+(sig.length-2)+'</span>' : '') + '</div>';
+    }
+    return t + '</div>';
+  }).join("") + '</div></div>';
+  return h;
+}
+
+function vDepot(d, ticker, i){
+  var h = '<div class="fil'+(d.type?"":" cold")+'">'
+    + '<div class="d">'+esc(d.date)+'</div><div class="b">'
+    + '<div class="t">'+esc(d.type||"Dépôt")
+    + (d.fonds ? '<span class="tag w" style="margin-left:8px">⚑ '+esc(d.fonds)+'</span>' : '')
+    + '</div><div class="m">'+esc(d.titre)+(d.par?" — "+esc(d.par):"")
+    + (d.kind==="5pct" ? esc(" · "+d.pct+" % (Δ"+d.delta+"), "+d.titres+" titres") : "")
+    + '</div>';
+  if(d.kind==="5pct"){
+    h += '<div style="margin-top:8px"><div class="lbl" style="margin-bottom:5px">'
+      + '보유목적 — à lire sur DART, l\'API ne le renvoie pas</div><div class="chips">'
+      + ["단순투자","일반투자","경영참가"].map(function(o){
+          return '<button class="chip'+(d.objet===o?" on":"")+'" data-objet="'+o+'" '
+            + 'data-t="'+esc(ticker)+'" data-i="'+i+'">'+o+'</button>';
+        }).join("") + '</div>';
+    if(d.objet==="단순투자") h += '<p class="hint">Passif. N\'arme rien, ne relève pas la note.</p>';
+    else if(d.objet) h += '<p class="hint" style="color:var(--warn)">Pré-activisme. Trigger armé. Reprends le mémo avec le skill.</p>';
+    h += '</div>';
+  }
+  h += '</div>';
+  if(d.no) h += '<a class="lnk" target="_blank" rel="noreferrer" href="https://dart.fss.or.kr/dsaf001/main.do?rcpNo='+esc(d.no)+'">DART ↗</a>';
+  return h + '</div>';
+}
+
+function vFiche(){
+  var f=fiche(S.sel); if(!f){ S.vue="titres"; return vTitres(); }
+  var M=f.memo;
+  var h='<div class="sec"><button class="back" id="back">← Tous les titres</button><div class="panel">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">'
+    + '<div><h1 style="font-size:28px;font-weight:600;letter-spacing:-.03em">'+esc(f.nom)+'</h1>'
+    + '<div class="ctick" style="margin-top:4px">'+esc(f.ticker)+' · KRX'
+    + (f.detenu?' · <span class="held">DÉTENU</span>':'')+'</div></div>'
+    + '<div style="text-align:right">'+vNote(f.note,40)
+    + (f.importe?'<div class="ctick" style="margin-top:6px">mémo du '+esc(f.importe)+'</div>':'')
+    + '</div></div>';
+
+  if(M && M.partiel) h += '<div class="notice err" style="margin-top:20px"><b>Mémo partiel.</b> '
+    + 'Ce mémo a été importé en mode dégradé : seuls la note et le verdict ont été récupérés. '
+    + 'Le raisonnement (thèse, gouvernance, catalyseurs, avocat du diable) n\'a PAS été importé. '
+    + 'Cette note n\'est pas auditable en l\'état. Régénère le mémo avec le skill à jour.</div>';
+  if(f.arme) h += '<div class="notice warn" style="margin-top:20px"><b>Trigger armé.</b> '+esc(f.trigger)+'</div>';
+  if(aRevoir(f)) h += '<div class="notice info" style="margin-top:14px"><b>Mémo dépassé.</b> '
+    + 'Un dépôt DART est postérieur. Reprends ce titre avec le skill Graham x Daubasses, '
+    + 'puis réimporte le JSON : note, trigger et historique se mettent à jour.</div>';
+
+  /* bilan */
+  var b=f.bilan, C=(b&&b.comptes)||{}, K=(b&&b.calcul)||{};
+  h += '<h3 class="blk">Bilan DART — source primaire, à emporter dans l\'analyse</h3><div class="kpis">'
+    + vKpi("Cours", f.cours ? f.cours.toLocaleString("fr-FR")+" ₩" : null, "non saisi")
+    + vKpi("Capitaux propres", money(C.capitaux_propres), "non tiré")
+    + vKpi("Trésorerie", money(C.tresorerie), "—")
+    + vKpi("Dettes", money(C.passif_total), "—")
+    + vKpi("Trésorerie nette", money(K.net_cash), "—")
+    + vKpi("VANN", money(K.vann), "—")
+    + '</div>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    + '<button class="cta ghost" data-bilan="'+esc(f.ticker)+'">'
+    + ((b&&b.chargement) ? '<span class="spin" style="border-top-color:var(--accent)"></span>Bilan' : 'Tirer le bilan DART')
+    + '</button>'
+    + '<input class="in" id="cours" type="number" style="max-width:190px" placeholder="Cours du jour (KRW)" value="'+(f.cours||"")+'">'
+    + '<button class="cta ghost" data-copie="'+esc(f.ticker)+'">Copier pour l\'analyse</button>'
+    + '</div>';
+  if(b&&b.erreur) h += '<div class="notice err" style="margin-top:12px">'+esc(b.erreur)+'</div>';
+  if(b&&b.comptes) h += '<p class="hint">Bilan '+esc(b.exercice)+' '+esc(b.periode)
+    +', tiré de DART. Mapping des comptes heuristique : vérifie les postes avant d\'en tirer une VANN.</p>';
+
+  /* dépôts */
+  if((f.depots||[]).length){
+    h += '<h3 class="blk">Dépôts dans la fenêtre — tous, sans filtre de type</h3>';
+    h += f.depots.map(function(d,i){ return vDepot(d,f.ticker,i); }).join("");
+  }
+
+  /* mémo */
+  if(!M){
+    h += '<div class="empty"><p>Aucun mémo. L\'analyse se fait avec le skill Graham x Daubasses,<br>'
+      + 'puis s\'importe ici en JSON.</p>'
+      + '<button class="cta ghost" data-vue="import">Importer un mémo</button></div>';
+  } else {
+    if(M.partiel){
+      h += '<div class="empty"><p>Le contenu du mémo n\'a pas été importé.<br>'
+        + 'Seuls la note (' + esc(M.note) + '/5) et le verdict sont connus.</p>'
+        + '<button class="cta ghost" data-vue="import">Réimporter un mémo complet</button></div>';
+      return h + '</div></div>';
+    }
+    var A=M.actif||{}, R=M.resultat||{}, V=M.relatif||{}, G=M.gouvernance||{}, P=M.potentiel||{};
+    h += '<div class="heros">'+esc(M.heros)+'</div>';
+    // Une section = numero, titre, chapo, encadres chiffres, puis la prose.
+    // Les chiffres vivent dans les encadres. La prose ne les repete pas.
+    function vSection(num, def, S, kpis){
+      var h = '<h3 class="blk">' + num + ' · ' + def + '</h3>';
+      if(S.titre) h += '<div class="stitre">' + esc(S.titre) + '</div>';
+      if(S.chapo) h += '<p class="chapo">' + esc(S.chapo) + '</p>';
+      if(kpis) h += kpis;
+      var ps = S.paras && S.paras.length ? S.paras
+             : (S.commentaire ? [S.commentaire] : []);
+      ps.forEach(function(p){ h += '<p class="para">' + esc(p) + '</p>'; });
+      return h;
+    }
+
+    h += vSection("01", "Actif", A,
+      '<div class="kpis">' + vKpi("Trésorerie nette",A.net_cash) + vKpi("VANN",A.vann)
+      + vKpi("VANT",A.vant) + vKpi("EV",A.ev) + vKpi("VMLV",A.vmlv) + '</div>');
+    h += vSection("02", "Résultat", R, null);
+    h += vSection("03", "Valeur relative", V, null);
+    if(V.pairs && V.pairs.length) h += '<div class="tags" style="margin-top:10px">'
+      + V.pairs.map(function(p){ return '<span class="tag h">'+esc(p)+'</span>'; }).join("") + '</div>';
+    h += vSection("04", "Gouvernance", G, null);
+    if(G.controle_famille_hors_autocontrole)
+      h += '<div class="notice info" style="margin-top:10px;font-size:13px"><b>Contrôle réel, hors autocontrôle</b> : '
+        + esc(G.controle_famille_hors_autocontrole)+'</div>';
+    h += '<h3 class="blk">05 · Potentiel et asymétrie</h3>';
+    if(P.echelle && P.echelle.length) h += '<ul class="clean" style="margin-bottom:14px">'
+      + P.echelle.map(function(e){ return '<li>'+esc(e)+'</li>'; }).join("") + '</ul>';
+    h += '<div class="three">'
+      + '<div><h3 class="blk" style="margin:0 0 6px">Adverse</h3><p class="prose" style="font-size:13.5px">'+esc(P.tri_adverse)+'</p></div>'
+      + '<div><h3 class="blk" style="margin:0 0 6px">Adverse +</h3><p class="prose" style="font-size:13.5px">'+esc(P.tri_adverse_plus)+'</p></div>'
+      + '<div><h3 class="blk" style="margin:0 0 6px">Base</h3><p class="prose" style="font-size:13.5px">'+esc(P.tri_base)+'</p></div>'
+      + '</div>';
+    if(P.angle_mort_du_temps) h += '<div class="notice warn" style="margin-top:14px;font-size:13px">'
+      + '<b>Angle mort du temps.</b> '+esc(P.angle_mort_du_temps)+'</div>';
+    h += '<h3 class="blk">Avocat du diable</h3>'
+      + '<blockquote class="devil">' + esc(M.avocat_du_diable) + '</blockquote>';
+    function liste(arr,cls){
+      if(!arr||!arr.length) return '<ul class="clean"><li style="color:var(--ink3)">—</li></ul>';
+      return '<ul class="clean">'+arr.map(function(t){
+        return '<li'+(cls?' class="'+cls+'"':'')+'>'+esc(t)+'</li>'; }).join("")+'</ul>';
+    }
+    h += '<div class="three" style="margin-top:22px">'
+      + '<div><h3 class="blk" style="margin-top:0">Su</h3>'+liste(M.sait)+'</div>'
+      + '<div><h3 class="blk" style="margin-top:0">Déduit</h3>'+liste(M.deduit)+'</div>'
+      + '<div><h3 class="blk" style="margin-top:0">Manque</h3>'+liste(M.manque,"miss")+'</div>'
+      + '</div>';
+    h += '<h3 class="blk">Catalyseurs datés</h3>'+liste(M.catalyseurs);
+    h += '<h3 class="blk">06 · Verdict</h3><div class="verdictbox">'
+      + '<div style="text-align:center;flex-shrink:0">'+vNote(M.note,34)+vPill(M.verdict)+'</div>'
+      + '<p class="prose" style="flex:1;font-size:14px">'+esc(M.pourquoi_note)+'</p></div>';
+    if(M.note_pratique) h += '<p class="hint"><b>Note pratique</b>, qui ne plafonne jamais la note : '
+      + esc(M.note_pratique)+'</p>';
+    if(M.memo_url) h += '<p class="hint"><a href="'+esc(M.memo_url)+'" target="_blank" rel="noreferrer">Ouvrir le mémo HTML complet ↗</a></p>';
+    h += '<p class="hint">Ni conseil ni recommandation personnalisée.</p>';
+
+    if(f.historique && f.historique.length>1){
+      h += '<h3 class="blk">Historique de la note</h3><ul class="clean">'
+        + f.historique.slice().reverse().map(function(x){
+            return '<li>'+esc(x.date)+' · '+esc(x.de===null||x.de===undefined?"—":x.de)
+              +' → <b>'+esc(x.vers)+'</b>'+(x.verdict?esc(" ("+x.verdict+")"):"")
+              +(x.pourquoi?" · "+esc(x.pourquoi):"")+'</li>';
+          }).join("") + '</ul>';
+    }
+  }
+  return h + '</div></div>';
+}
+
+function vVeille(){
+  var l=tousDepots();
+  var h='<div class="sec">';
+  if(S.scan.erreur) h += '<div class="notice err">'+esc(S.scan.erreur)+'</div>';
+  h += '<div class="sechead"><h2>Ce qui est tombé</h2><span class="lbl">'
+    + (S.scan.fait ? esc(S.scan.attestes+"/"+S.scan.total+" attestés") : "non lancé") + '</span></div>';
+  if(!l.length){
+    h += '<div class="empty"><p>Rien dans la fenêtre, ou veille jamais lancée.</p>'
+      + '<button class="cta" id="btn-scan2">Lancer la veille</button></div>';
+  } else {
+    h += l.map(function(d){
+      return '<div class="fil'+(d.type?"":" cold")+'"><div class="d">'+esc(d.date)+'</div><div class="b">'
+        + '<div class="t">'+esc(d.type||"Dépôt")
+        + (d.fonds?'<span class="tag w" style="margin-left:8px">⚑ '+esc(d.fonds)+'</span>':'')
+        + '</div><div class="m">'+esc(d.ticker)+' · '+esc(d.nom)+' — '+esc(d.titre)
+        + (d.par?esc(" ("+d.par+")"):"")+'</div></div>'
+        + '<button class="lnk" data-open="'+esc(d.ticker)+'">Ouvrir →</button></div>';
+    }).join("");
+  }
+  return h+'</div>';
+}
+
+function vImport(){
+  var h='<div class="sec"><div class="sechead"><h2>Importer un mémo</h2></div>'
+    + '<p class="hint" style="margin-bottom:18px;font-size:14px">L\'analyse se fait avec le skill '
+    + '<b>Graham x Daubasses</b>, en session, là où la recherche et la contradiction existent. '
+    + 'Le skill embarque la donnée <b>dans le mémo .html lui-même</b> (plus besoin de gérer deux fichiers). Dépose le <code>.html</code> ici : la fiche '
+    + 'se remplit, la note entre au classement, le trigger s\'arme, l\'historique se met à jour. '
+    + 'Aucune ressaisie.</p>'
+    + '<div class="drop'+(S.over?" over":"")+'" id="drop">'
+    + '<h3>Dépose le mémo (.html ou .json)</h3><p>ou clique pour choisir. Plusieurs mémos à la fois : accepté.</p>'
+    + '<input type="file" id="file" accept=".json,.html,application/json,text/html" multiple style="display:none"></div>';
+  if(S.msg) h += '<div class="notice info" style="margin-top:16px">'+esc(S.msg)+'</div>';
+  if(S.err) h += '<div class="notice err" style="margin-top:16px">'+esc(S.err)+'</div>';
+  h += '<h3 class="blk">Ou colle le JSON</h3>'
+    + '<textarea class="in" id="colle" rows="7" placeholder=\'{"ticker":"029530","nom":"Sindoh","note":3,...}\'>'
+    + esc(S.colle) + '</textarea>'
+    + '<button class="cta" id="btn-colle" style="margin-top:10px">Importer</button>'
+    + '<h3 class="blk">Sauvegarde</h3>'
+    + '<button class="cta ghost" id="btn-export">Exporter toutes les fiches</button>'
+    + '<p class="hint">Les données vivent dans ce navigateur. Exporte de temps en temps.</p></div>';
+  return h;
+}
+
+function vCalendrier(){
+  var l=LOIS.slice().sort(function(a,b){ return jours(a.d)-jours(b.d); });
+  return '<div class="sec"><div class="sechead"><h2>Ce que la loi va faire</h2></div>'
+    + '<p class="hint" style="margin-bottom:20px;font-size:14px">Ces dates ne sont pas du contexte. '
+    + 'Elles donnent la <b>databilité</b>, seule chose qui fait monter une note. Sans date, pas de '
+    + 'probabilité datable.</p>'
+    + l.map(function(x){
+        var j=jours(x.d);
+        var cls = (j>0&&j<60) ? " soon" : (j<0 ? " past" : "");
+        return '<div class="cal"><div class="jm'+cls+'">'+(j>0?"J-"+j:"en vigueur")+'</div>'
+          + '<div style="flex:1"><div class="cname">'+esc(x.t)+'</div>'
+          + '<div style="font-size:13px;color:var(--ink2);margin-top:2px">'+esc(x.q)+'</div>'
+          + '<div class="tags"><span class="tag h">'+esc(x.c)+'</span></div></div>'
+          + '<div class="ctick">'+fr(x.d)+'</div></div>';
+      }).join("") + '</div>';
+}
+
+function vReglages(){
+  return '<div class="sec"><div class="panel">'
+    + '<h2 style="font-size:21px;font-weight:600;margin-bottom:22px">Réglages</h2>'
+    + '<div class="field"><label>Clé OpenDART</label>'
+    + '<input class="in" id="cle" type="password" placeholder="40 caractères" value="'+esc(S.cfg.cle)+'">'
+    + '<p class="hint">Laisse vide si tu as mis <code>OPENDART_KEY</code> en variable d\'environnement '
+    + 'Netlify : plus sûr, la clé ne quitte jamais le serveur.</p></div>'
+    + '<div class="field"><label>Relais</label>'
+    + '<input class="in" id="relais" value="'+esc(S.cfg.relais)+'">'
+    + '<p class="hint">OpenDART ne renvoie pas les en-têtes CORS : aucun navigateur ne peut l\'appeler '
+    + 'directement. Le relais fait l\'appel côté serveur. Par défaut <code>/.netlify/functions/scan</code>.</p></div>'
+    + '<div class="field"><label>Fenêtre du scan manuel</label><div class="chips">'
+    + [[1,"1 jour"],[7,"7 jours"],[30,"30 jours"]].map(function(p){
+        return '<button class="chip'+(S.cfg.fenetre===p[0]?" on":"")+'" data-fen="'+p[0]+'">'+p[1]+'</button>';
+      }).join("")
+    + '</div><p class="hint">La veille automatique (app fermée, chaque lundi) tourne côté Netlify et ne '
+    + 'dépend pas de ce réglage.</p></div>'
+    + '<div class="field"><label>Données</label>'
+    + '<button class="cta ghost" id="btn-reset">Réinitialiser</button></div>'
+    + '</div></div>';
+}
+
+function render(){
+  var c = "";
+  if(S.vue==="titres") c = S.sel ? vFiche() : vTitres();
+  else if(S.vue==="veille") c = vVeille();
+  else if(S.vue==="import") c = vImport();
+  else if(S.vue==="calendrier") c = vCalendrier();
+  else if(S.vue==="reglages") c = vReglages();
+  document.getElementById("app").innerHTML = vHeader() + c;
+  brancher();
+}
+
+/* ═══════════════════════ ÉVÉNEMENTS ═══════════════════════ */
+function brancher(){
+  var app=document.getElementById("app");
+
+  app.querySelectorAll("[data-vue]").forEach(function(b){
+    b.onclick=function(){ S.vue=b.getAttribute("data-vue"); S.sel=null; S.msg=null; S.err=null; render(); };
+  });
+  app.querySelectorAll("[data-open]").forEach(function(b){
+    b.onclick=function(){ S.sel=b.getAttribute("data-open"); S.vue="titres"; render();
+      window.scrollTo(0,0); };
+  });
+  app.querySelectorAll("[data-tri]").forEach(function(b){
+    b.onclick=function(){ S.tri=b.getAttribute("data-tri"); render(); };
+  });
+  app.querySelectorAll("[data-fen]").forEach(function(b){
+    b.onclick=function(){ S.cfg.fenetre=parseInt(b.getAttribute("data-fen"),10); save(); render(); };
+  });
+  app.querySelectorAll("[data-bilan]").forEach(function(b){
+    b.onclick=function(){ tirerBilan(b.getAttribute("data-bilan")); };
+  });
+  app.querySelectorAll("[data-copie]").forEach(function(b){
+    b.onclick=function(){
+      var f=fiche(b.getAttribute("data-copie"));
+      var t=JSON.stringify({ticker:f.ticker,nom:f.nom,cours:f.cours,bilan:f.bilan,depots:f.depots},null,2);
+      if(navigator.clipboard) navigator.clipboard.writeText(t);
+      b.textContent="Copié";
+      setTimeout(function(){ b.textContent="Copier pour l'analyse"; },1400);
+    };
+  });
+  app.querySelectorAll("[data-objet]").forEach(function(b){
+    b.onclick=function(){
+      var f=fiche(b.getAttribute("data-t"));
+      var i=parseInt(b.getAttribute("data-i"),10);
+      var o=b.getAttribute("data-objet");
+      f.depots[i].objet=o;
+      if(o!=="단순투자") f.arme=true;
+      save(); render();
+    };
+  });
+
+  var s1=document.getElementById("btn-scan"); if(s1) s1.onclick=lancerScan;
+  var s2=document.getElementById("btn-scan2"); if(s2) s2.onclick=lancerScan;
+  var bk=document.getElementById("back"); if(bk) bk.onclick=function(){ S.sel=null; render(); };
+
+  var fl=document.getElementById("filtre");
+  if(fl){ fl.oninput=function(){ S.filtre=fl.value; var p=fl.selectionStart; render();
+    var n=document.getElementById("filtre"); if(n){ n.focus(); n.setSelectionRange(p,p); } }; }
+
+  var co=document.getElementById("cours");
+  if(co){ co.onblur=function(){ var f=fiche(S.sel); f.cours=co.value?+co.value:null; save(); render(); }; }
+
+  var cl=document.getElementById("cle");
+  if(cl){ cl.onblur=function(){ S.cfg.cle=cl.value.trim(); save(); }; }
+  var rl=document.getElementById("relais");
+  if(rl){ rl.onblur=function(){ S.cfg.relais=rl.value.trim(); save(); }; }
+
+  var dp=document.getElementById("drop"), fi=document.getElementById("file");
+  if(dp){
+    dp.onclick=function(){ fi.click(); };
+    dp.ondragover=function(e){ e.preventDefault(); dp.classList.add("over"); };
+    dp.ondragleave=function(){ dp.classList.remove("over"); };
+    dp.ondrop=function(e){ e.preventDefault(); dp.classList.remove("over"); lireFichiers(e.dataTransfer.files); };
+    fi.onchange=function(){ lireFichiers(fi.files); };
+  }
+  var ta=document.getElementById("colle");
+  if(ta){ ta.oninput=function(){ S.colle=ta.value; }; }
+  var bc=document.getElementById("btn-colle");
+  if(bc){ bc.onclick=function(){ if(S.colle.trim()) importer(S.colle); }; }
+
+  var be=document.getElementById("btn-export");
+  if(be){ be.onclick=function(){
+    var blob=new Blob([JSON.stringify(S.fiches,null,2)],{type:"application/json"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="decotes-sauvegarde-"+new Date().toISOString().slice(0,10)+".json";
+    a.click();
+  }; }
+
+  var br=document.getElementById("btn-reset");
+  if(br){ br.onclick=function(){
+    if(!confirm("Effacer fiches, mémos et historique ?")) return;
+    S.fiches=seed(); save(); render();
+  }; }
+}
+
+render();
+})();
+</script>
+</body>
+</html>
